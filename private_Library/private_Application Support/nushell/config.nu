@@ -190,3 +190,10 @@ def enable-touchid-sudo [] {
 # import mcp-install function
 use `~/.config/mcp/generate-mcp.nu`
 use `~/.config/mcp/mcp-install.nu`
+
+# GH CLI wrapper
+def --wrapped gh [...args] {
+    ^op plugin run -- gh ...$args err>| lines | where {
+        $in !~ "not a shell officially supported"
+    } | str join "\n"
+}
