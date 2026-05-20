@@ -1,0 +1,51 @@
+# This is Git's per-user configuration file.
+[user]
+    name = Guilherme Gobbi
+    email = g@gobbi.info
+    signingkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDN6d2y9B9N13tFuQLsKZ4PVE2uB8KPCUy0exyAiphMt bitwarden-ssh-key"
+[push]
+    default = upstream
+[gpg]
+    format = ssh
+[gpg "ssh"]
+    allowedSigners = ~/.ssh/allowedSigners
+    allowedsignersfile = ~/.ssh/allowedSigners
+[commit]
+    gpgsign = true
+
+# References
+# https://haacked.com/archive/2014/07/28/github-flow-aliases/
+# https://haacked.com/archive/2015/06/29/git-migrate/
+# https://git.wiki.kernel.org/index.php/Aliases
+[alias]
+    co = checkout
+    # update local branch from remote without checkout
+    cor = !git fetch origin $@:$@
+    ec = config --global -e
+    up = !git pull --rebase --prune $@ && git submodule update --init --recursive
+    cob = checkout -b
+    cm = !git add -A && git commit -m # git reset to unstage
+	c = !git add -A && git commit # for big commit messages
+    save = !git add -A && git commit -m 'SAVEPOINT'
+	qs = !sh -c 'git stash push --include-untracked $@ && git stash apply' ${@:2}# quicksave
+	s = stash push --include-untracked
+	sl = stash list
+	sa = !sh -c 'git stash apply stash@{${1:-0}}'
+	ss = !sh -c 'git stash show -p stash@{${1:-0}}' -
+	sp = !sh -c 'git stash pop stash@{${1:-0}}' -
+	spc = !sh -c 'git stash pop stash@{${1:-0}} && git stash clear' -
+	sc = stash clear
+    undo = reset HEAD~1 --mixed
+	fetchto = !sh -c 'git fetch -pPq && git branch -t $2 $1 && git checkout $2' -
+    amend = commit -a --amend
+    wipe = !git add -A && git commit -qm 'WIPE SAVEPOINT' && git reset HEAD~1 --hard
+	st = status -bs
+    lg = log --graph --oneline --decorate --all
+    lgs = log --graph --oneline --decorate --all --name-status
+    l1 = log --oneline
+    ri = rebase --interactive
+    ri1 = !sh -c 'git rebase --interactive $1^ $1' -
+    rh = reset HEAD^
+    rc = rebase --continue
+    cr = !sh -c 'git branch -m $1 $1_ && git cob $1 && git branch -D $1_' - #cleanup rebase
+    ap = add -p
