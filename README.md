@@ -63,6 +63,7 @@ chezmoi provides:
 ~/.testcontainers.properties
 ~/dev.sh
 ~/.config/starship.toml
+~/.config/gh/config.yml
 ~/.ssh/allowedSigners
 ~/.ssh/config
 ~/.ssh/known_hosts
@@ -110,6 +111,7 @@ chezmoi add ~/.gitconfig
 chezmoi add ~/.testcontainers.properties
 chezmoi add ~/dev.sh
 chezmoi add ~/.config/starship.toml
+chezmoi add ~/.config/gh/config.yml
 chezmoi add ~/.ssh/allowedSigners
 chezmoi add ~/.ssh/config
 chezmoi add ~/.ssh/known_hosts
@@ -387,6 +389,17 @@ chezmoi apply
 - sync direction is explicit
 - source repo is considered canonical state
 - runtime/cache/history files should usually be ignored
+
+---
+
+# Public Repo Safety Notes
+
+This dotfiles repo is designed to be shareable/public.
+
+- Secrets are managed via 1Password at runtime (not committed in this repo).
+- Keep `~/.config/gh/config.yml` tracked, but do **not** track `~/.config/gh/hosts.yml` (contains auth tokens).
+- Do **not** commit private keys (for example `~/.ssh/id_*`); only public material/config is tracked here.
+- Before pushing, run a quick check for accidental secrets in staged changes.
 
 ---
 
