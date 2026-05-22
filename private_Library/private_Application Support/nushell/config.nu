@@ -144,6 +144,13 @@ def reload [] {
   exec nu
 }
 
+# run closures in sequence (bash-like && chaining for externals)
+def then [...steps: closure] {
+  for step in $steps {
+    do $step
+  }
+}
+
 # uuid lowercase without newline
 def uuid [] {
   ^uuidgen | str trim | str downcase
