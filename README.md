@@ -397,9 +397,9 @@ chezmoi apply
 This dotfiles repo is designed to be shareable/public.
 
 - Secrets are managed via 1Password at runtime (not committed in this repo).
+- Sensitive/runtime files are explicitly blocked by both `.chezmoiignore` (apply scope) and `.gitignore` (commit scope).
 - Keep `~/.config/gh/config.yml` tracked, but do **not** track `~/.config/gh/hosts.yml` (contains auth tokens).
 - Do **not** commit private keys (for example `~/.ssh/id_*`); only public material/config is tracked here.
-- Before pushing, run a quick check for accidental secrets in staged changes.
 
 ---
 

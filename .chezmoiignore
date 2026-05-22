@@ -1,2 +1,20 @@
-private_Library/private_Application Support/nushell/history.txt
+# Keep repo docs out of chezmoi apply target
 README.md
+
+# Nushell runtime/history (can contain commands/data)
+private_Library/private_Application Support/nushell/history.txt
+private_Library/private_Application Support/nushell/history.sqlite
+private_Library/private_Application Support/nushell/history.sqlite-*
+
+# GitHub CLI auth state (contains tokens)
+dot_config/gh/hosts.yml
+
+# Local mise overrides often contain machine-local or sensitive env values
+dot_config/mise/config.local.toml
+dot_config/mise/config.*.local.toml
+
+# Never manage private SSH keys from this repo
+dot_ssh/id_*
+dot_ssh/private_id_*
+dot_ssh/*.pem
+dot_ssh/private_*.pem

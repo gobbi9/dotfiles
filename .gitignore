@@ -1,0 +1,20 @@
+# macOS metadata
+.DS_Store
+
+# GitHub CLI auth state (contains tokens)
+dot_config/gh/hosts.yml
+
+# Local mise overrides often contain machine-local or sensitive env values
+dot_config/mise/config.local.toml
+dot_config/mise/config.*.local.toml
+
+# Nushell runtime/history
+private_Library/private_Application Support/nushell/history.txt
+private_Library/private_Application Support/nushell/history.sqlite
+private_Library/private_Application Support/nushell/history.sqlite-*
+
+# Never commit private SSH keys
+dot_ssh/id_*
+dot_ssh/private_id_*
+dot_ssh/*.pem
+dot_ssh/private_*.pem
