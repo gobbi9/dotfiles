@@ -7,11 +7,13 @@ SUPERGATEWAY_CMD = "npx -y supergateway"
 TIME_MCP_CMD = "uvx mcp-server-time --local-timezone=Europe/Berlin"
 FETCH_MCP_CMD = "uvx mcp-server-fetch"
 INSPECTOR_CMD = "npx @modelcontextprotocol/inspector"
+GITHUB_MCP_CMD = "sh -lc 'GITHUB_PERSONAL_ACCESS_TOKEN=op://Personal/gh-cli/token exec op run -- github-mcp-server stdio'"
 
 [tools]
 caddy = "latest"
 node = "lts"
 uv = "latest"
+"github:github/github-mcp-server" = "latest"
 
 [tasks.mcp-time]
 description = "MCP server for time and timezone (stdio -> streamableHttp via supergateway)"
@@ -24,3 +26,7 @@ run = 'npx -y supergateway --stdio "{{env.FETCH_MCP_CMD}}" --outputTransport str
 [tasks.mcp-inspector]
 description = "MCP server inspector Web UI (direct (inferred streamableHttp))"
 run = "{{env.INSPECTOR_CMD}}"
+
+[tasks.mcp-github]
+description = "GitHub MCP server (binary + 1Password PAT) (stdio -> streamableHttp via supergateway)"
+run = 'npx -y supergateway --stdio "{{env.GITHUB_MCP_CMD}}" --outputTransport streamableHttp --port 10003 --cors'
