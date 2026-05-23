@@ -16,17 +16,17 @@ uv = "latest"
 "github:github/github-mcp-server" = "latest"
 
 [tasks.mcp-time]
-description = "MCP server for time and timezone (stdio -> streamableHttp via supergateway)"
+description = "Use for current time and timezone conversion (e.g., Australia/Sydney, America/Sao_Paulo). (stdio -> streamableHttp via supergateway)"
 run = 'npx -y supergateway --stdio "{{env.TIME_MCP_CMD}}" --outputTransport streamableHttp --port 10001 --cors'
 
 [tasks.mcp-fetch]
-description = "MCP server for fetching webpages (stdio -> streamableHttp via supergateway)"
+description = "Use for fetching and extracting data from webpages. (stdio -> streamableHttp via supergateway)"
 run = 'npx -y supergateway --stdio "{{env.FETCH_MCP_CMD}}" --outputTransport streamableHttp --port 10002 --cors'
 
 [tasks.mcp-inspector]
-description = "MCP server inspector Web UI (direct (inferred streamableHttp))"
+description = "Interactive MCP Inspector web UI for debugging servers and tools. (direct (inferred streamableHttp))"
 run = "{{env.INSPECTOR_CMD}}"
 
 [tasks.mcp-github]
-description = "GitHub MCP server (binary + 1Password PAT) (stdio -> streamableHttp via supergateway)"
+description = "Use for GitHub repository operations via MCP tools (issues, PRs, code, metadata). (stdio -> streamableHttp via supergateway)"
 run = 'npx -y supergateway --stdio "{{env.GITHUB_MCP_CMD}}" --outputTransport streamableHttp --port 10003 --cors'
