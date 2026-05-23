@@ -18,3 +18,7 @@ dot_ssh/id_*
 dot_ssh/private_id_*
 dot_ssh/*.pem
 dot_ssh/private_*.pem
+
+# Scans managed via 1Password-backed templates
+dot_config/scans/scans.csv
+dot_config/scans/all-tags.txt

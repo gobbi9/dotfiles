@@ -67,6 +67,8 @@ chezmoi provides:
 ~/.ssh/allowedSigners
 ~/.ssh/config
 ~/.ssh/known_hosts
+~/.config/scans/scans.csv (rendered from 1Password template)
+~/.config/scans/all-tags.txt (rendered from 1Password template)
 ```
 
 ## Managed Directories
@@ -236,6 +238,8 @@ This is effectively:
 
 `chezmoi apply` can overwrite filesystem changes.
 
+⚠️ For files rendered from 1Password templates, `chezmoi diff` resolves secret values (after 1Password authentication/biometric confirmation when required) and can print sensitive plaintext content to your terminal.
+
 Safe workflow:
 
 ```bash
@@ -397,6 +401,8 @@ chezmoi apply
 This dotfiles repo is designed to be shareable/public.
 
 - Secrets are managed via 1Password at runtime (not committed in this repo).
+- `~/.config/scans/scans.csv` and `~/.config/scans/all-tags.txt` are managed via chezmoi templates that call `onepasswordRead`.
+- Raw source copies (`dot_config/scans/scans.csv` and `dot_config/scans/all-tags.txt`) are blocked by both `.chezmoiignore` (apply scope) and `.gitignore` (commit scope).
 - Sensitive/runtime files are explicitly blocked by both `.chezmoiignore` (apply scope) and `.gitignore` (commit scope).
 - Keep `~/.config/gh/config.yml` tracked, but do **not** track `~/.config/gh/hosts.yml` (contains auth tokens).
 - Do **not** commit private keys (for example `~/.ssh/id_*`); only public material/config is tracked here.
