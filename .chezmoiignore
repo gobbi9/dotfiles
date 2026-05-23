@@ -1,6 +1,9 @@
 # Keep repo docs out of chezmoi apply target
 README.md
 
+# Repo helper scripts (not managed targets)
+push-templates-to-1password.nu
+
 # Nushell runtime/history (can contain commands/data)
 private_Library/private_Application Support/nushell/history.txt
 private_Library/private_Application Support/nushell/history.sqlite
@@ -18,7 +21,3 @@ dot_ssh/id_*
 dot_ssh/private_id_*
 dot_ssh/*.pem
 dot_ssh/private_*.pem
-
-# Scans managed via 1Password-backed templates
-dot_config/scans/scans.csv
-dot_config/scans/all-tags.txt

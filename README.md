@@ -262,6 +262,45 @@ chezmoi apply
 
 ---
 
+# Push Local Files Back to 1Password (for `onepasswordRead` templates)
+
+Templates like:
+
+- `dot_config/scans/scans.csv.tmpl`
+- `dot_config/scans/all-tags.txt.tmpl`
+
+use `onepasswordRead "op://..."` references.
+
+Important: `onepasswordRead` is read-only from chezmoi's perspective (1Password -> rendered local file).
+If you changed a local rendered file and want that change in 1Password, run the helper script from the repo root:
+
+```bash
+cd ~/.local/share/chezmoi
+./push-templates-to-1password.nu --dry-run
+./push-templates-to-1password.nu
+chezmoi apply # for tmpl files choose "overwrite" to update chezmoi state
+chezmoi diff # should not output anything
+```
+
+What it does:
+
+- scans all `*.tmpl` files in the chezmoi source directory
+- extracts every `onepasswordRead` `op://...` reference
+- resolves each template's local target via `chezmoi target-path`
+- reads the local target file content
+- updates standard fields by exact `id`/`label` via item JSON template edits
+- if the ref points to a file attachment (for example `all-tags.txt`), updates it via escaped `[file]` assignment so dotted names are handled correctly
+
+Behavior:
+
+- `--dry-run` prints intended updates only
+- in apply mode, the script prints each `op://...` ref before any `op` call (before biometric prompt)
+- works for new templates automatically (no hardcoded scans paths)
+- skips missing local target files with warnings
+- exits non-zero if any update fails
+
+---
+
 # Useful Commands
 
 ## Show differences
