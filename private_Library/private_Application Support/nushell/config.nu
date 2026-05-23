@@ -204,3 +204,6 @@ def --wrapped gh [...args] {
         $in !~ "not a shell officially supported"
     } | str join "\n"
 }
+
+# import scans function
+use `~/projects/scans/scans`
