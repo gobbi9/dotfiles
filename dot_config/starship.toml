@@ -4,90 +4,123 @@ scan_timeout = 5000  # increase from default 30ms
 
 [aws]
 format = '\[[$symbol($profile)(\($region\))(\[$duration\])]($style)\]'
+symbol = " "
 
 [azure]
 format = '\[[$symbol($subscription)]($style)\]'
+symbol = " "
 
 [battery]
 format = '\[[$symbol$percentage]($style)\]'
+full_symbol = "󰁹 "
+charging_symbol = "󰂄 "
+discharging_symbol = "󰂃 "
+unknown_symbol = "󰂑 "
+empty_symbol = "󰂎 "
 
 [buf]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
 
 [bun]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
 
 [c]
 format = '\[[$symbol($version(-$name))]($style)\]'
+symbol = " "
 
 [cmake]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
 
 [cmd_duration]
 format = '\[[⏱ $duration]($style)\]'
 
 [cobol]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
 
 [conda]
 format = '\[[$symbol$environment]($style)\]'
+symbol = " "
 
 [container]
 format = '\[[$symbol \[$name\]]($style)\]'
+symbol = " "
 
 [cpp]
 format = '\[[$symbol($version(-$name))]($style)\]'
+symbol = " "
 
 [crystal]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
 
 [daml]
 format = '\[[$symbol($version)]($style)\]'
 
 [dart]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
 
 [deno]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
+
+[directory]
+read_only = " 󰌾"
 
 [direnv]
 format = '\[[$symbol$loaded/$allowed]($style)\]'
+symbol = " "
 
 [docker_context]
 format = '\[[$symbol$context]($style)\]'
+symbol = " "
 
 [dotnet]
 format = '\[[$symbol($version)(🎯 $tfm)]($style)\]'
+symbol = " "
 
 [elixir]
 format = '\[[$symbol($version \(OTP $otp_version\))]($style)\]'
+symbol = " "
 
 [elm]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
 
 [erlang]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
 
 [fennel]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
 
 [fortran]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
 
 [fossil_branch]
 format = '\[[$symbol$branch]($style)\]'
+symbol = " "
 
 [fossil_metrics]
 format = '\[[+$added]($added_style)\]\[[-$deleted]($deleted_style)\]'
 
 [gcloud]
 format = '\[[$symbol$account(@$domain)(\($region\))]($style)\]'
+symbol = "󱇶 "
 
 [git_branch]
 format = '\[[$symbol$branch]($style)\]'
+symbol = " "
 
 [git_commit]
 format = '\[[\($hash$tag\)]($style)\]'
+tag_symbol = '  '
 
 [git_metrics]
 format = '\[[+$added]($added_style)\]\[[-$deleted]($deleted_style)\]'
@@ -100,197 +133,375 @@ format = '([\[$all_status$ahead_behind\]]($style))'
 
 [gleam]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
 
 [golang]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
 
 [gradle]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
 
 [guix_shell]
 format = '\[[$symbol]($style)\]'
+symbol = " "
 
 [haskell]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
 
 [haxe]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
 
 [helm]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
 
 [hg_branch]
 format = '\[[$symbol$branch]($style)\]'
+symbol = " "
 
 [hostname]
 format = '\[[$ssh_symbol($hostname)]($style)\] '
+ssh_symbol = " "
 
 [java]
 format = '\[[$symbol($version)]($style)\]'
 style = 'red'
+symbol = " "
 
 [jobs]
 format = '\[[$symbol$number]($style)\]'
 
 [julia]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
 
 [kotlin]
-format = '\[[$symbol($version)]($style)\]'
+disabled = true
 
 [kubernetes]
 format = '\[[$symbol$context( \($namespace\))]($style)\]'
+symbol = "󱃾 "
 
 [localip]
 format = '\[[$localipv4]($style)\]'
 
 [lua]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
 
 [maven]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
 
 [memory_usage]
 format = '\[$symbol[$ram( | $swap)]($style)\]'
+symbol = "󰍛 "
 
 [meson]
 format = '\[[$symbol$project]($style)\]'
+symbol = "󰔷 "
 
 [mise]
 format = '\[[$symbol$health]($style)\]'
 
 [mojo]
 format = '\[[$symbol($version)]($style)\]'
+symbol = "󰈸 "
 
 [nats]
 format = '\[[$symbol$name]($style)\]'
+symbol = " "
 
 [netns]
 format = '\[[$symbol \[$name\]]($style)\]'
+symbol = "󰛳 "
 
 [nim]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
 
 [nix_shell]
 format = '\[[$symbol$state( \($name\))]($style)\]'
+symbol = " "
 
 [nodejs]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
 
 [ocaml]
 format = '\[[$symbol($version)(\($switch_indicator$switch_name\))]($style)\]'
+symbol = " "
 
 [odin]
 format = '\[[$symbol($version )]($style)\]'
+symbol = "󰟢 "
 
 [opa]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
 
 [openstack]
 format = '\[[$symbol$cloud(\($project\))]($style)\]'
+symbol = " "
 
 [os]
 format = '\[[$symbol]($style)\]'
 
+[os.symbols]
+AIX = " "
+AlmaLinux = " "
+Alpaquita = " "
+Alpine = " "
+ALTLinux = " "
+Amazon = " "
+Android = " "
+AOSC = " "
+Arch = " "
+Artix = " "
+Bluefin = " "
+CachyOS = " "
+CentOS = " "
+Debian = " "
+DragonFly = " "
+Elementary = " "
+Emscripten = " "
+EndeavourOS = " "
+Fedora = " "
+FreeBSD = " "
+Garuda = " "
+Gentoo = " "
+HardenedBSD = "󰞌 "
+Illumos = " "
+InstantOS = " "
+Ios = "󰀷 "
+Kali = " "
+Linux = " "
+Mabox = " "
+Macos = " "
+Manjaro = " "
+Mariner = " "
+MidnightBSD = " "
+Mint = " "
+NetBSD = " "
+NixOS = " "
+Nobara = " "
+OpenBSD = " "
+OpenCloudOS = " "
+openEuler = " "
+openSUSE = " "
+OracleLinux = "󰺡 "
+PikaOS = " "
+Pop = " "
+Raspbian = " "
+Redhat = "󱄛 "
+RedHatEnterprise = "󱄛 "
+Redox = "󰀘 "
+RockyLinux = " "
+Solus = " "
+SUSE = " "
+Ubuntu = " "
+Ultramarine = " "
+Unknown = " "
+Uos = " "
+Void = " "
+Windows = "󰍲 "
+Zorin = " "
+
 [package]
 format = '\[[$symbol$version]($style)\]'
+symbol = "󰏗 "
 
 [perl]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
 
 [php]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
 
 [pijul_channel]
 format = '\[[$symbol$channel]($style)\]'
+symbol = " "
 
 [pixi]
 format = '\[[$symbol$version( $environment)]($style)\]'
+symbol = "󰏗 "
 
 [pulumi]
 format = '\[[$symbol$stack]($style)\]'
+symbol = " "
 
 [purescript]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
 
 [python]
 # it sets the python version even if the requirements.txt is nested 10 ways in
 format = '\[[${symbol}${pyenv_prefix}(${version})(\($virtualenv\))]($style)\]'
 disabled = true
+symbol = " "
 
 [custom.mise_python]
 command = "mise current python | split row ' ' | get 1"
 shell = ["nu", "-c"]
 when = "mise current python | complete | get exit_code == 0"
-symbol = "🐍 "
-format = "[$symbol$output]($style) "
+symbol = " "
+format = '\[[$symbol($output)]($style)\]'
 style = "yellow bold"
+
+[custom.kotlin_gradle]
+description = "Kotlin version from Gradle project config"
+detect_files = ["settings.gradle.kts", "settings.gradle", "build.gradle.kts", "build.gradle", "gradle/libs.versions.toml", "gradle/libs.toml"]
+when = "test -f settings.gradle.kts || test -f settings.gradle || test -f build.gradle.kts || test -f build.gradle || test -f gradle/libs.versions.toml || test -f gradle/libs.toml"
+command = '''
+v=""
+catalog=""
+
+# Resolve custom catalog path from settings.gradle(.kts), e.g. from(files("gradle/libs.toml"))
+for f in settings.gradle.kts settings.gradle; do
+  if [ -f "$f" ]; then
+    catalog=$(sed -nE "s/.*from\(files\([\"']([^\"']+)[\"']\)\).*/\1/p" "$f" | head -n1)
+    [ -n "$catalog" ] && break
+  fi
+done
+
+# Try version catalogs first (custom path, then common defaults)
+for c in "$catalog" gradle/libs.versions.toml gradle/libs.toml; do
+  [ -n "$c" ] || continue
+  [ -f "$c" ] || continue
+
+  # Prefer explicit version keys from [versions]
+  kv=$(grep -E '^[[:space:]]*kotlinVersion[[:space:]]*=' "$c" | head -n1 | sed -E "s/.*[\"']([^\"']+)[\"'].*/\1/")
+  if [ -z "$kv" ]; then
+    kv=$(grep -E '^[[:space:]]*kotlin[[:space:]]*=' "$c" | head -n1 | sed -E "s/.*[\"']([^\"']+)[\"'].*/\1/")
+  fi
+
+  # [plugins] entries for org.jetbrains.kotlin* with direct version = "x.y.z"
+  if [ -z "$kv" ]; then
+    kv=$(grep -E '^[[:space:]]*[^=]+=[[:space:]]*\{[^}]*id[[:space:]]*=[[:space:]]*"org\.jetbrains\.kotlin[^\"]*"[^}]*version[[:space:]]*=[[:space:]]*"[^"]+"' "$c" | head -n1 | sed -E 's/.*version[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/')
+  fi
+
+  # [plugins] entries for org.jetbrains.kotlin* with version.ref = "..."
+  if [ -z "$kv" ]; then
+    ref=$(grep -E '^[[:space:]]*[^=]+=[[:space:]]*\{[^}]*id[[:space:]]*=[[:space:]]*"org\.jetbrains\.kotlin[^\"]*"[^}]*version[[:space:]]*\.[[:space:]]*ref[[:space:]]*=[[:space:]]*"[^"]+"' "$c" | head -n1 | sed -E 's/.*version[[:space:]]*\.[[:space:]]*ref[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/')
+    if [ -n "$ref" ]; then
+      kv=$(grep -E "^[[:space:]]*$ref[[:space:]]*=" "$c" | head -n1 | sed -E "s/.*[\"']([^\"']+)[\"'].*/\1/")
+    fi
+  fi
+
+  if [ -n "$kv" ]; then
+    v="$kv"
+    break
+  fi
+done
+
+# Fallback: Kotlin plugin declared directly in build scripts
+if [ -z "$v" ] && [ -f build.gradle.kts ]; then
+  v=$(grep -E 'kotlin\("[^"]+"\)[[:space:]]+version[[:space:]]+"[^"]+"|id\("org\.jetbrains\.kotlin[^\"]*"\)[[:space:]]+version[[:space:]]+"[^"]+"' build.gradle.kts | head -n1 | sed -E 's/.*version[[:space:]]+"([^"]+)".*/\1/')
+fi
+
+if [ -z "$v" ] && [ -f build.gradle ]; then
+  v=$(grep -E 'id[[:space:]]+"org\.jetbrains\.kotlin[^\"]*"[[:space:]]+version[[:space:]]+"[^"]+"' build.gradle | head -n1 | sed -E 's/.*version[[:space:]]+"([^"]+)".*/\1/')
+fi
+
+[ -n "$v" ] || exit 1
+printf "v%s" "$v"
+'''
+symbol = "󱈙 "
+format = '\[[$symbol($output)]($style)\]'
+style = "bold blue"
+shell = ["sh"]
 
 [quarto]
 format = '\[[$symbol($version)]($style)\]'
 
 [raku]
 format = '\[[$symbol($version-$vm_version)]($style)\]'
+symbol = "󱖊 "
 
 [red]
 format = '\[[$symbol($version)]($style)\]'
+symbol = "󱍼 "
 
 [rlang]
 format = '\[[$symbol($version)]($style)\]'
+symbol = "󰟔 "
 
 [ruby]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
 
 [rust]
 format = '\[[$symbol($version)]($style)\]'
+symbol = "󱘗 "
 
 [scala]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
 
 [shell]
 format = '\[[$indicator]($style)\]'
 
+[shlvl]
+symbol = "󰹍 "
+
 [singularity]
 format = '\[[$symbol\[$env\]]($style)\]'
+symbol = " "
 
 [solidity]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
 
 [spack]
 format = '\[[$symbol$environment]($style)\]'
+symbol = " "
 
 [status]
 format = '\[[$symbol$status]($style)\]'
+symbol = " "
 
 [sudo]
 format = '\[[as $symbol]($style)\]'
+symbol = " "
 
 [swift]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
 
 [terraform]
 format = '\[[$symbol$workspace]($style)\]'
+symbol = " "
 
 [time]
 format = '\[[$time]($style)\]'
 
 [typst]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
 
 [username]
 format = '\[[$user]($style)\]'
 
 [vagrant]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
 
 [vcsh]
 format = '\[vcsh [$symbol$repo]($style)\]'
 
 [vlang]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
 
 [xmake]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
 
 [zig]
 format = '\[[$symbol($version)]($style)\]'
+symbol = " "
