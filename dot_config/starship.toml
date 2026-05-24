@@ -1,6 +1,6 @@
 "$schema" = 'https://starship.rs/config-schema.json'
 
-scan_timeout = 1000  # increase from default 30ms
+scan_timeout = 5000  # increase from default 30ms
 
 [aws]
 format = '\[[$symbol($profile)(\($region\))(\[$duration\])]($style)\]'
@@ -214,7 +214,17 @@ format = '\[[$symbol$stack]($style)\]'
 format = '\[[$symbol($version)]($style)\]'
 
 [python]
+# it sets the python version even if the requirements.txt is nested 10 ways in
 format = '\[[${symbol}${pyenv_prefix}(${version})(\($virtualenv\))]($style)\]'
+disabled = true
+
+[custom.mise_python]
+command = "mise current python | split row ' ' | get 1"
+shell = ["nu", "-c"]
+when = "mise current python | complete | get exit_code == 0"
+symbol = "🐍 "
+format = "[$symbol$output]($style) "
+style = "yellow bold"
 
 [quarto]
 format = '\[[$symbol($version)]($style)\]'

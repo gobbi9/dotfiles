@@ -425,6 +425,36 @@ chezmoi apply
 
 ---
 
+# Homebrew Bundle (`Brewfile`)
+
+The repo includes a `Brewfile` in the repo root (`~/.local/share/chezmoi/Brewfile`).
+
+## Update `Brewfile` from current machine
+
+From the repo root:
+
+```bash
+cd ~/.local/share/chezmoi
+brew bundle dump --force
+```
+
+## Import/install from `Brewfile`
+
+On a new or existing machine:
+
+```bash
+cd ~/.local/share/chezmoi
+brew bundle
+```
+
+Optional check-only mode:
+
+```bash
+brew bundle check
+```
+
+---
+
 # Notes
 
 - chezmoi is NOT a live sync system
