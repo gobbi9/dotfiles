@@ -14,6 +14,7 @@ $directory\
 $vcsh\
 $fossil_branch\
 $fossil_metrics\
+$sudo\
 ${custom.gradle_root_project}\
 $git_branch\
 $git_commit\
@@ -91,11 +92,10 @@ $openstack\
 $azure\
 $direnv\
 $env_var\
-$mise\
 $crystal\
 ${custom.mise_python}\
 ${custom.kotlin_gradle}\
-$sudo\
+$mise\
 $cmd_duration\
 $line_break\
 $jobs\
@@ -287,7 +287,7 @@ ssh_symbol = " "
 
 [java]
 format = '\[[$symbol($version)]($style)\]'
-style = 'bold red'
+style = 'bold bright-red'
 symbol = " "
 
 [jobs]
@@ -324,7 +324,9 @@ format = '\[[$symbol$project]($style)\]'
 symbol = "󰔷 "
 
 [mise]
+disabled = false
 format = '\[[$symbol$health]($style)\]'
+symbol = "󰭼 "
 
 [mojo]
 format = '\[[$symbol($version)]($style)\]'
@@ -539,15 +541,46 @@ format = '\[[$symbol($output)]($style)\]'
 style = "yellow bold"
 
 [custom.git_tags]
-description = "Show all tags that point at HEAD"
-when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && [ -n \"$(git tag --points-at HEAD)\" ]"
+description = "Show tags on HEAD and the most recent previous tagged commit"
+when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1"
 command = '''
-tags=$(git tag --points-at HEAD --sort=-creatordate | paste -sd ',' -)
-[ -n "$tags" ] || exit 1
-printf "%s" "$tags"
+head_tags=$(git tag --points-at HEAD --sort=-creatordate | paste -sd ',' -)
+
+start_ref="HEAD"
+if [ -n "$head_tags" ]; then
+  start_ref=$(git rev-parse --verify HEAD^ 2>/dev/null || printf "")
+fi
+
+prev_tags=""
+if [ -n "$start_ref" ]; then
+  for c in $(git rev-list --first-parent "$start_ref"); do
+    t=$(git tag --points-at "$c")
+    if [ -n "$t" ]; then
+      prev_tags=$(git tag --points-at "$c" --sort=-creatordate | paste -sd ',' -)
+      break
+    fi
+  done
+fi
+
+out=""
+if [ -n "$prev_tags" ]; then
+  out="󰋚 $prev_tags"
+fi
+if [ -n "$head_tags" ]; then
+  if [ -n "$out" ]; then
+    out="$out  $head_tags"
+  else
+    out=" $head_tags"
+  fi
+fi
+
+if [ -z "$out" ]; then
+  out="no tags"
+fi
+
+printf "%s" "$out"
 '''
-symbol = " "
-format = '\[[$symbol$output]($style)\]'
+format = '\[[$output]($style)\]'
 style = "yellow bold"
 shell = ["sh"]
 
@@ -660,12 +693,15 @@ format = '\[[$symbol$environment]($style)\]'
 symbol = " "
 
 [status]
+disabled = false
 format = '\[[$symbol$status]($style)\]'
 symbol = " "
 
 [sudo]
-format = '\[[as $symbol]($style)\]'
-symbol = " "
+disabled = false
+format = '[$symbol]($style)'
+style = 'bg:red fg:white'
+symbol = "   "
 
 [swift]
 format = '\[[$symbol($version)]($style)\]'
