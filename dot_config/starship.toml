@@ -2,6 +2,113 @@
 
 scan_timeout = 5000  # increase from default 30ms
 
+format = """
+$username\
+$hostname\
+$localip\
+$shlvl\
+$singularity\
+$kubernetes\
+$nats\
+$directory\
+$vcsh\
+$fossil_branch\
+$fossil_metrics\
+${custom.gradle_root_project}\
+$git_branch\
+$git_commit\
+${custom.git_tags}\
+$git_state\
+$git_metrics\
+$git_status\
+$hg_branch\
+$hg_state\
+$pijul_channel\
+$docker_context\
+$package\
+$bun\
+$c\
+$cmake\
+$cobol\
+$cpp\
+$daml\
+$dart\
+$deno\
+$dotnet\
+$elixir\
+$elm\
+$erlang\
+$fennel\
+$fortran\
+$gleam\
+$golang\
+$gradle\
+$haskell\
+$haxe\
+$helm\
+$java\
+$julia\
+$kotlin\
+$lua\
+$maven\
+$mojo\
+$nim\
+$nodejs\
+$ocaml\
+$odin\
+$opa\
+$perl\
+$php\
+$pulumi\
+$purescript\
+$python\
+$quarto\
+$raku\
+$rlang\
+$red\
+$ruby\
+$rust\
+$scala\
+$solidity\
+$swift\
+$terraform\
+$typst\
+$vlang\
+$vagrant\
+$xmake\
+$zig\
+$buf\
+$guix_shell\
+$nix_shell\
+$conda\
+$pixi\
+$meson\
+$spack\
+$memory_usage\
+$aws\
+$gcloud\
+$openstack\
+$azure\
+$direnv\
+$env_var\
+$mise\
+$crystal\
+${custom.mise_python}\
+${custom.kotlin_gradle}\
+$sudo\
+$cmd_duration\
+$line_break\
+$jobs\
+$battery\
+$time\
+$status\
+$container\
+$netns\
+$os\
+$shell\
+$character
+"""
+
 [aws]
 format = '\[[$symbol($profile)(\($region\))(\[$duration\])]($style)\]'
 symbol = " "
@@ -115,12 +222,13 @@ format = '\[[$symbol$account(@$domain)(\($region\))]($style)\]'
 symbol = "󱇶 "
 
 [git_branch]
-format = '\[[$symbol$branch]($style)\]'
+format = '\[[$symbol$branch(:$remote_name/$remote_branch)]($style)\]'
 symbol = " "
+always_show_remote = true
 
 [git_commit]
-format = '\[[\($hash$tag\)]($style)\]'
-tag_symbol = '  '
+format = '\[[ $hash]($style)\]'
+only_detached = false
 
 [git_metrics]
 format = '\[[+$added]($added_style)\]\[[-$deleted]($deleted_style)\]'
@@ -130,6 +238,16 @@ format = '\[[$state ($progress_current/$progress_total)]($style)\]'
 
 [git_status]
 format = '([\[$all_status$ahead_behind\]]($style))'
+modified = '!${count}'
+staged = '+${count}'
+untracked = '?${count}'
+renamed = '»${count}'
+deleted = '✘${count}'
+stashed = '\$${count}'
+conflicted = '=${count}'
+ahead = '⇡${count}'
+behind = '⇣${count}'
+diverged = '⇕⇡${ahead_count}⇣${behind_count}'
 
 [gleam]
 format = '\[[$symbol($version)]($style)\]'
@@ -169,7 +287,7 @@ ssh_symbol = " "
 
 [java]
 format = '\[[$symbol($version)]($style)\]'
-style = 'red'
+style = 'bold red'
 symbol = " "
 
 [jobs]
@@ -345,6 +463,73 @@ format = '\[[${symbol}${pyenv_prefix}(${version})(\($virtualenv\))]($style)\]'
 disabled = true
 symbol = " "
 
+[custom.gradle_root_project]
+description = "Show rootProject.name and root project version via Gradle wrapper (cached, non-blocking)"
+when = '''
+root=""
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  root=$(git rev-parse --show-toplevel 2>/dev/null)
+fi
+if [ -n "$root" ] && [ -x "$root/gradlew" ]; then
+  exit 0
+fi
+[ -x ./gradlew ]
+'''
+command = '''
+root=""
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  root=$(git rev-parse --show-toplevel 2>/dev/null)
+fi
+
+if [ -n "$root" ] && [ -x "$root/gradlew" ]; then
+  cd "$root" || exit 1
+elif [ -x ./gradlew ]; then
+  root=$(pwd)
+else
+  exit 1
+fi
+
+cache_root="${STARSHIP_CACHE:-$HOME/.cache/starship}"
+mkdir -p "$cache_root" 2>/dev/null || true
+
+key=$(printf "%s" "$root" | cksum | awk '{print $1}')
+cache_file="$cache_root/gradle-root-project-${key}.txt"
+lock_file="$cache_root/gradle-root-project-${key}.lock"
+
+ttl=300
+now=$(date +%s)
+mtime=$(stat -f %m "$cache_file" 2>/dev/null || stat -c %Y "$cache_file" 2>/dev/null || echo 0)
+age=$((now - mtime))
+
+# Print cached value immediately if present
+if [ -s "$cache_file" ]; then
+  cat "$cache_file"
+fi
+
+# Refresh in background if cache is missing/stale and no refresh is in progress
+if [ ! -s "$cache_file" ] || [ "$age" -gt "$ttl" ]; then
+  if [ ! -e "$lock_file" ]; then
+    : > "$lock_file"
+    (
+      props=$(./gradlew -q properties --no-daemon 2>/dev/null)
+      name=$(printf "%s\n" "$props" | sed -nE 's/^name:[[:space:]]+(.+)$/\1/p' | head -n1)
+      version=$(printf "%s\n" "$props" | sed -nE 's/^version:[[:space:]]+(.+)$/\1/p' | head -n1)
+      if [ -n "$name" ] && [ -n "$version" ]; then
+        tmp_file="$cache_file.tmp"
+        printf "%s v%s" "$name" "$version" > "$tmp_file" && mv "$tmp_file" "$cache_file"
+      fi
+      rm -f "$lock_file"
+    ) >/dev/null 2>&1 &
+  fi
+fi
+
+# Module is shown only when cache has something to display
+[ -s "$cache_file" ] || exit 1
+'''
+format = '\[[󰏖 $output]($style)\]'
+style = "bold white"
+shell = ["sh"]
+
 [custom.mise_python]
 command = "mise current python | split row ' ' | get 1"
 shell = ["nu", "-c"]
@@ -352,6 +537,19 @@ when = "mise current python | complete | get exit_code == 0"
 symbol = " "
 format = '\[[$symbol($output)]($style)\]'
 style = "yellow bold"
+
+[custom.git_tags]
+description = "Show all tags that point at HEAD"
+when = "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && [ -n \"$(git tag --points-at HEAD)\" ]"
+command = '''
+tags=$(git tag --points-at HEAD --sort=-creatordate | paste -sd ',' -)
+[ -n "$tags" ] || exit 1
+printf "%s" "$tags"
+'''
+symbol = " "
+format = '\[[$symbol$output]($style)\]'
+style = "yellow bold"
+shell = ["sh"]
 
 [custom.kotlin_gradle]
 description = "Kotlin version from Gradle project config"
