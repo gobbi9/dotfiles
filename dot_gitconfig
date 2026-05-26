@@ -5,6 +5,7 @@
     signingkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDN6d2y9B9N13tFuQLsKZ4PVE2uB8KPCUy0exyAiphMt bitwarden-ssh-key"
 [push]
     default = upstream
+
 [gpg]
     format = ssh
 [gpg "ssh"]
@@ -12,6 +13,9 @@
     allowedsignersfile = ~/.ssh/allowedSigners
 [commit]
     gpgsign = true
+
+[includeIf "gitdir:~/projects/opensockets/**"]
+    path = ~/projects/opensockets/.gitconfig
 
 # References
 # https://haacked.com/archive/2014/07/28/github-flow-aliases/
