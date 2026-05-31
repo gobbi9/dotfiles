@@ -86,6 +86,79 @@ history.txt
 
 ---
 
+# Zed Configuration & Extensions
+
+Use this repo to fully restore your Zed setup on a new machine.
+
+## Files to Track
+
+Track these global Zed config files:
+
+```text
+~/.config/zed/settings.json
+~/.config/zed/keymap.json
+~/.config/zed/tasks.json
+~/.config/zed/snippets/
+~/.config/zed/themes/
+```
+
+The helper script below syncs these paths into chezmoi automatically (no manual `chezmoi add` needed for Zed files).
+
+Notes:
+
+- `tasks.json`, `snippets/`, and `themes/` are optional (only add if you use them).
+- Do **not** track `~/Library/Application Support/Zed/extensions/installed` (runtime artifacts, machine-local).
+
+## Tracking Installed Extensions (Portable Way)
+
+Track extension IDs through `settings.json` using `auto_install_extensions`.
+
+This repo includes a helper script:
+
+```text
+sync-zed.nu
+```
+
+It reads currently installed Zed extensions and then does everything end-to-end:
+
+```text
+1) updates ~/.config/zed/settings.json -> auto_install_extensions
+2) runs: chezmoi add ~/.config/zed/settings.json
+3) runs: chezmoi add ~/.config/zed/keymap.json   (if present)
+4) runs: chezmoi add ~/.config/zed/tasks.json    (if present)
+5) runs: chezmoi add ~/.config/zed/snippets      (if present)
+6) runs: chezmoi add ~/.config/zed/themes        (if present)
+```
+
+### Usage
+
+From repo root:
+
+```bash
+cd ~/.local/share/chezmoi
+./sync-zed.nu --dry-run
+./sync-zed.nu
+```
+
+Then commit/push as usual.
+
+The script is idempotent:
+
+- it rewrites `settings.json` only when `auto_install_extensions` actually changed
+- it is safe to rerun after every extension install/remove
+- it only runs `chezmoi add` for paths that exist (optional paths are skipped when missing)
+
+## New Machine Restore Flow (Zed)
+
+```bash
+cd ~/.local/share/chezmoi
+chezmoi apply
+```
+
+Then open Zed once. Zed reads `auto_install_extensions` and installs listed extensions automatically.
+
+---
+
 # Setup
 
 Install:

@@ -1,0 +1,128 @@
+{
+  "git": {
+    "branch_picker": {
+      "show_author_name": true
+    },
+    "inline_blame": {
+      "show_commit_summary": true
+    }
+  },
+  "tabs": {
+    "file_icons": true,
+    "git_status": true
+  },
+  "title_bar": {
+    "show_menus": false,
+    "show_user_picture": true,
+    "show_branch_status_icon": true
+  },
+  "colorize_brackets": false,
+  "toolbar": {
+    "code_actions": false
+  },
+  "minimap": {
+    "show": "never"
+  },
+  "scrollbar": {
+    "axes": {
+      "horizontal": true,
+      "vertical": true
+    },
+    "show": "auto"
+  },
+  "buffer_line_height": "standard",
+  "diff_view_style": "unified",
+  "context_server_timeout": 180,
+  "edit_predictions": {
+    "allow_data_collection": "no"
+  },
+  "show_whitespaces": "all",
+  "cli_default_open_behavior": "new_window",
+  "base_keymap": "JetBrains",
+  "project_panel": {
+    "dock": "left"
+  },
+  "outline_panel": {
+    "dock": "left"
+  },
+  "collaboration_panel": {
+    "dock": "left"
+  },
+  "git_panel": {
+    "dock": "left"
+  },
+  "ssh_connections": [],
+  "terminal": {
+    "shell": "system",
+    "font_size": 14.0,
+    "font_family": "FantasqueSansM Nerd Font"
+  },
+  "agent": {
+    "sidebar_side": "right",
+    "default_profile": "write",
+    "tool_permissions": {
+      "default": "allow",
+      "tools": {
+        "move_path": {
+          "default": "allow"
+        },
+        "edit_file": {
+          "default": "allow"
+        },
+        "write_file": {
+          "default": "allow"
+        }
+      }
+    },
+    "dock": "right",
+    "default_model": {
+      "effort": "high",
+      "enable_thinking": true,
+      "provider": "openai",
+      "model": "gpt-5.3-codex"
+    },
+    "model_parameters": []
+  },
+  "buffer_font_family": "FantasqueSansM Nerd Font",
+  "telemetry": {
+    "diagnostics": false,
+    "metrics": false
+  },
+  "icon_theme": {
+    "mode": "system",
+    "light": "Catppuccin Latte",
+    "dark": "Catppuccin Macchiato"
+  },
+  "ui_font_size": 14.0,
+  "buffer_font_size": 14.0,
+  "theme": {
+    "mode": "system",
+    "light": "Gruvbox Light Hard",
+    "dark": "Gruvbox Dark Hard"
+  },
+  "file_types": {
+    "Git Attributes": ["**/{git,.git,.git/info}/attributes"],
+    "Git Config": [
+      "*.gitconfig",
+      "*_gitconfig",
+      "**/{git,.git,.git/modules,.git/modules/*}/config"
+    ],
+    "Git Ignore": [
+      "**/{git,.git}/ignore",
+      "**/.git/info/exclude",
+      ".chezmoiignore"
+    ]
+  },
+  "auto_install_extensions": {
+    "catppuccin-icons": true,
+    "git-firefly": true,
+    "html": true,
+    "java": true,
+    "kotlin": true,
+    "make": true,
+    "nu": true,
+    "rainbow-csv": true,
+    "toml": true,
+    "xml": true
+  }
+}
