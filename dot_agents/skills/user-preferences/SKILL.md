@@ -13,7 +13,8 @@ Use this skill when a task depends on user-specific tooling and workflow convent
 
 ## Terminal
 
-- `nushell` is the login shell.
+- `nushell` is the login shell, installed in `/opt/homebrew/bin/nu`, configured in `~/Library/Application Support/nushell/config.nu`.
+- `nushell` autoload scripts should be placed in `~/Library/Application Support/nushell/vendor/autoload`.
 - Provide shell snippets in optimized Nushell unless the user asks otherwise.
 - Prefer Nushell scripts over Python scripts for intermediate steps. Do not use Python scripts for intermediate steps unless the user asks otherwise.
 - Execute nushell commands with `nu -n -c "source '/Users/gobbi/Library/Application Support/nushell/config.nu'; <NU_COMMAND>"`
