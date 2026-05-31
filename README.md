@@ -159,6 +159,36 @@ Then open Zed once. Zed reads `auto_install_extensions` and installs listed exte
 
 ---
 
+# New Mac Bootstrap Order (Dependency-First)
+
+Verified for this repo:
+
+- `brew` is a manual bootstrap dependency (not preinstalled on macOS).
+- `1password-cli` is installed later by `brew bundle` (already listed in `Brewfile`).
+- `op` authentication is required before workflows that resolve `onepasswordRead` templates.
+
+```mermaid
+graph TD
+    N1["**Manual**: `xcode-select --install`\n(git becomes usable)"] --> N2["**Manual**: install Homebrew"]
+    N1 --> N3["**Manual**: install 1Password for macOS"]
+    N2 --> N4["`git clone https://github.com/gobbi9/dotfiles.git ~/.local/share/chezmoi`"]
+    N4 --> N6["`cd ~/.local/share/chezmoi && brew bundle`"]
+    N6 --> N7["`echo /opt/homebrew/bin/nu | sudo tee -a /etc/shells && chsh -s /opt/homebrew/bin/nu`"]
+    N7 --> N8["**Manual**: log out and log back in\n(required for login shell change)"]
+    N8 --> N9["`op signin`"]
+    N3 --> N9
+    N9 --> N10["`chezmoi apply`"]
+    N10 --> N11["`cd ~/.local/share/chezmoi && git remote set-url origin git@github.com:gobbi9/dotfiles.git`"]
+    N11 --> N12["Open Zed once\n(auto_install_extensions restores extensions)"]
+
+    click N2 "https://brew.sh" "Homebrew installation page"
+    click N3 "https://1password.com/downloads/mac/" "1Password for macOS download"
+```
+
+Note: `git clone https://...` keeps full git history; the later `git remote set-url` step only switches `origin` from HTTPS to SSH.
+
+---
+
 # Setup
 
 Install:
