@@ -204,6 +204,7 @@ def --wrapped gh [...args] {
     with-env { GH_TOKEN: $gh_token } {
         ^gh ...$args
     }
+    ^op signout
 }
 
 # import scans function
