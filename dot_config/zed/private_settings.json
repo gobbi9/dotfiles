@@ -76,7 +76,7 @@
     },
     "dock": "right",
     "default_model": {
-      "effort": "high",
+      "effort": "medium",
       "enable_thinking": true,
       "provider": "openai",
       "model": "gpt-5.3-codex"
