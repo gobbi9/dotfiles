@@ -69,6 +69,7 @@ chezmoi provides:
 ~/.ssh/known_hosts
 ~/.config/scans/scans.csv (rendered from 1Password template)
 ~/.config/scans/all-tags.txt (rendered from 1Password template)
+~/Library/Preferences/com.apple.symbolichotkeys.plist (macOS keyboard shortcuts)
 ```
 
 ## Managed Directories
@@ -116,7 +117,7 @@ Track extension IDs through `settings.json` using `auto_install_extensions`.
 This repo includes a helper script:
 
 ```text
-sync-zed.nu
+zed-sync.nu
 ```
 
 It reads currently installed Zed extensions and then does everything end-to-end:
@@ -136,8 +137,8 @@ From repo root:
 
 ```bash
 cd ~/.local/share/chezmoi
-./sync-zed.nu --dry-run
-./sync-zed.nu
+./zed-sync.nu --dry-run
+./zed-sync.nu
 ```
 
 Then commit/push as usual.
@@ -156,6 +157,38 @@ chezmoi apply
 ```
 
 Then open Zed once. Zed reads `auto_install_extensions` and installs listed extensions automatically.
+
+---
+
+# macOS Keyboard Shortcuts (IntelliJ/Zed conflict fixes)
+
+To track your disabled/reassigned macOS shortcuts, this repo includes:
+
+```text
+macos-keyboard-shortcuts-sync.nu
+```
+
+It exports `com.apple.symbolichotkeys` and syncs the plist into chezmoi:
+
+```text
+1) defaults export com.apple.symbolichotkeys -
+2) writes ~/Library/Preferences/com.apple.symbolichotkeys.plist (only if changed)
+3) runs: chezmoi add ~/Library/Preferences/com.apple.symbolichotkeys.plist
+```
+
+### Usage
+
+From repo root:
+
+```bash
+cd ~/.local/share/chezmoi
+./macos-keyboard-shortcuts-sync.nu --dry-run
+./macos-keyboard-shortcuts-sync.nu
+```
+
+After changing macOS keyboard shortcuts in System Settings, re-run the script and commit.
+
+On a new Mac, `chezmoi apply` restores the file. If shortcuts do not refresh immediately, log out/in (or reboot).
 
 ---
 

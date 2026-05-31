@@ -3,7 +3,8 @@ README.md
 
 # Repo helper scripts (not managed targets)
 push-templates-to-1password.nu
-sync-zed.nu
+zed-sync.nu
+macos-keyboard-shortcuts-sync.nu
 
 # Nushell runtime/history (can contain commands/data)
 private_Library/private_Application Support/nushell/history.txt
