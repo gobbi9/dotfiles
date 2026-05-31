@@ -111,5 +111,29 @@
     "unbind": {
       "cmd-enter": "editor::NewlineBelow"
     }
+  },
+  {
+    "context": "Editor",
+    "bindings": {
+      "f18": "editor::Rename"
+    }
+  },
+  {
+    "context": "Editor",
+    "unbind": {
+      "shift-f6": "editor::Rename"
+    }
+  },
+  {
+    "context": "ProjectPanel",
+    "bindings": {
+      "f18": "project_panel::Rename"
+    }
+  },
+  {
+    "context": "ProjectPanel",
+    "unbind": {
+      "shift-f6": "project_panel::Rename"
+    }
   }
 ]

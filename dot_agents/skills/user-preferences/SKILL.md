@@ -1,0 +1,67 @@
+---
+name: user-preferences
+description: For every prompt, apply the user's environment and workflow preferences for shell, package/runtime managers, security, git, gh cli, and MCP usage when performing development tasks.
+---
+
+# User preferences
+
+Use this skill when a task depends on user-specific tooling and workflow conventions.
+
+## Dotfiles
+
+- Dotfiles are managed by `chezmoi` in `~/.local/share/chezmoi`.
+
+## Terminal
+
+- `nushell` is the login shell.
+- Provide shell snippets in optimized Nushell unless the user asks otherwise.
+- Prefer Nushell scripts over Python scripts for intermediate steps. Do not use Python scripts for intermediate steps unless the user asks otherwise.
+- Execute nushell commands with `nu -n -c "source '/Users/gobbi/Library/Application Support/nushell/config.nu'; <NU_COMMAND>"`
+
+## Nushell scripting conventions
+
+Use these conventions when writing or reviewing Nushell scripts:
+
+- Home directory must be accessed via `$nu.home-dir` when writing scripts, unless it is not possible otherwise.
+- Respect aliases set in `~/Library/Application Support/nushell/config.nu`:
+
+```nu
+# https://www.nushell.sh/book/configuration.html#macos-keeping-usr-bin-open-as-open
+alias openn = open
+alias open = ^open
+```
+
+- Subdivide Nushell scripts into small, reusable functions/components.
+- Keep each Nushell function to a maximum of 50 lines.
+
+## Preferred tools
+
+- Use `brew` as the package manager.
+- Use `mise` as the environment/runtime manager.
+- Use `mise` for language runtime version management (JDK, npm/node, Python, Go, etc.).
+- Use `brew` for non-runtime tooling.
+
+## Security
+
+- `1Password` is the token manager.
+- Private SSH keys are managed by the 1Password SSH agent.
+- Never print sensitive information to the terminal.
+- If there is no way to complete a task without printing sensitive information, ask for explicit user confirmation first.
+- If sensitive information is printed to the terminal, inform the user immediately so keys/tokens can be rotated.
+- If the user declines access to required tokens or SSH keys, stop the current task and report that it is blocked.
+
+## Git
+
+- Use `git` for version control.
+- Prefer SSH over HTTPS for git remotes.
+- If creating a new worktree for a project, create it in the immediate parent directory of the project root.
+
+## GitHub
+
+- Use `gh` CLI for GitHub operations when it is available, gh has to be called from a nushell, because it is wrapped with a custom Nushell script to fetch the auth token from 1Password.
+
+## MCP servers
+
+- MCP services are discoverable at `GET http://localhost:8765`.
+- Refer to `~/projects/mcp/README.md`.
+- Prefer using MCP servers when one is available for the task.

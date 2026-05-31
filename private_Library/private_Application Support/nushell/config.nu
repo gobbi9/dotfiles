@@ -200,9 +200,10 @@ use `~/projects/mcp/mcp-install.nu`
 
 # GH CLI wrapper
 def --wrapped gh [...args] {
-    ^op plugin run -- gh ...$args err>| lines | where {
-        $in !~ "not a shell officially supported"
-    } | str join "\n"
+    let gh_token = (^op read --no-newline "op://Personal/gh-cli/token")
+    with-env { GH_TOKEN: $gh_token } {
+        ^gh ...$args
+    }
 }
 
 # import scans function
