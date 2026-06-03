@@ -72,7 +72,7 @@ def zed-open [target: string, --new(-n)] {
   }
 }
 
-def "nu-complete pdf quality" [] {
+def "--pdf quality" [] {
   ["screen", "ebook", "printer", "prepress", "default"]
 }
 
@@ -80,7 +80,7 @@ def "nu-complete pdf quality" [] {
 def "pdf compress" [
   input: string
   output: string
-  quality: string@"nu-complete pdf quality" = "ebook"
+  quality: string@"--pdf quality" = "ebook"
 ] {
   ^gs -q -sDEVICE=pdfwrite -dNOPAUSE -dQUIET -dBATCH -dSAFER $"(-dPDFSETTINGS=/($quality))" -dCompatibilityLevel=1.4 $"(-sOutputFile=($output))" $input
 }
@@ -167,7 +167,7 @@ def x265 [input: string] {
   ^ffmpeg -i $input -c:v libx265 -crf 26 -preset fast -c:a aac -b:a 320k $out
 }
 
-# enable sudo touchID, this setting is removed after every MacOS update
+# enable sudo touchID, this setting may be removed after every MacOS update
 def enable-touchid-sudo [] {
     let sudo_pam = "/etc/pam.d/sudo"
     let touchid_line = "auth       sufficient     pam_tid.so"
