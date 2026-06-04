@@ -70,6 +70,7 @@ chezmoi provides:
 ~/.config/scans/scans.csv (rendered from 1Password template)
 ~/.config/scans/all-tags.txt (rendered from 1Password template)
 ~/Library/Preferences/com.apple.symbolichotkeys.plist (macOS keyboard shortcuts)
+~/Library/Preferences/NSUserDictionaryReplacementItems.plist (rendered from 1Password template for macOS text replacements)
 ```
 
 ## Managed Directories
@@ -160,21 +161,36 @@ Then open Zed once. Zed reads `auto_install_extensions` and installs listed exte
 
 ---
 
-# macOS Keyboard Shortcuts (IntelliJ/Zed conflict fixes)
+# macOS Settings
 
-To track your disabled/reassigned macOS shortcuts, this repo includes:
-
-```text
-macos-keyboard-shortcuts-sync.nu
-```
-
-It exports `com.apple.symbolichotkeys` and syncs the plist into chezmoi:
+To track selected macOS settings, this repo includes:
 
 ```text
-1) defaults export com.apple.symbolichotkeys -
-2) writes ~/Library/Preferences/com.apple.symbolichotkeys.plist (only if changed)
-3) runs: chezmoi add ~/Library/Preferences/com.apple.symbolichotkeys.plist
+macos-settings-sync.nu
 ```
+
+It syncs two settings groups:
+
+```text
+1) Keyboard shortcuts
+   - defaults export com.apple.symbolichotkeys -
+   - writes ~/Library/Preferences/com.apple.symbolichotkeys.plist (only if changed)
+   - runs: chezmoi add ~/Library/Preferences/com.apple.symbolichotkeys.plist
+
+2) Text replacements
+   - extracts only NSUserDictionaryReplacementItems from the global preferences domain
+   - writes ~/Library/Preferences/NSUserDictionaryReplacementItems.plist (only if changed)
+   - ensures private_Library/Preferences/private_NSUserDictionaryReplacementItems.plist.tmpl exists
+   - uploads the extracted key plist to 1Password as op://Personal/macos-text-replacements/NSUserDictionaryReplacementItems.plist
+```
+
+Text replacements are treated as sensitive because System Settings → Keyboard → Text Replacements can contain private snippets. The repo commits only a `onepasswordRead` template for the extracted `NSUserDictionaryReplacementItems` key:
+
+```tmpl
+{{ onepasswordRead "op://Personal/macos-text-replacements/NSUserDictionaryReplacementItems.plist" }}
+```
+
+The plaintext source path `private_Library/Preferences/private_NSUserDictionaryReplacementItems.plist` is blocked by `.gitignore`.
 
 ### Usage
 
@@ -182,13 +198,30 @@ From repo root:
 
 ```bash
 cd ~/.local/share/chezmoi
-./macos-keyboard-shortcuts-sync.nu --dry-run
-./macos-keyboard-shortcuts-sync.nu
+./macos-settings-sync.nu --dry-run
+./macos-settings-sync.nu
 ```
 
-After changing macOS keyboard shortcuts in System Settings, re-run the script and commit.
+You can sync only one group when needed:
 
-On a new Mac, `chezmoi apply` restores the file. If shortcuts do not refresh immediately, log out/in (or reboot).
+```bash
+./macos-settings-sync.nu --skip-text-replacements
+./macos-settings-sync.nu --skip-keyboard-shortcuts
+```
+
+Before the first text replacement upload, create a 1Password item named `macos-text-replacements` in the `Personal` vault, or pass another file reference with `--text-replacements-op-ref`.
+
+After changing macOS keyboard shortcuts or text replacements in System Settings, re-run the script and commit.
+
+On a new Mac, run `chezmoi apply` to render the 1Password-backed key plist locally, then write only that key into macOS global preferences:
+
+```bash
+cd ~/.local/share/chezmoi
+chezmoi apply
+./macos-settings-sync.nu --restore-text-replacements
+```
+
+If shortcuts or text replacements do not refresh immediately, log out/in (or reboot).
 
 ---
 
@@ -404,6 +437,7 @@ Templates like:
 
 - `dot_config/scans/scans.csv.tmpl`
 - `dot_config/scans/all-tags.txt.tmpl`
+- `private_Library/Preferences/private_NSUserDictionaryReplacementItems.plist.tmpl`
 
 use `onepasswordRead "op://..."` references.
 
@@ -606,8 +640,8 @@ brew bundle check
 This dotfiles repo is designed to be shareable/public.
 
 - Secrets are managed via 1Password at runtime (not committed in this repo).
-- `~/.config/scans/scans.csv` and `~/.config/scans/all-tags.txt` are managed via chezmoi templates that call `onepasswordRead`.
-- Raw source copies (`dot_config/scans/scans.csv` and `dot_config/scans/all-tags.txt`) are blocked by both `.chezmoiignore` (apply scope) and `.gitignore` (commit scope).
+- `~/.config/scans/scans.csv`, `~/.config/scans/all-tags.txt`, and `~/Library/Preferences/NSUserDictionaryReplacementItems.plist` are managed via chezmoi templates that call `onepasswordRead`.
+- Raw source copies (`dot_config/scans/scans.csv`, `dot_config/scans/all-tags.txt`, and `private_Library/Preferences/private_NSUserDictionaryReplacementItems.plist`) are blocked by `.gitignore`; sensitive runtime/auth files are also blocked by `.chezmoiignore` where appropriate.
 - Sensitive/runtime files are explicitly blocked by both `.chezmoiignore` (apply scope) and `.gitignore` (commit scope).
 - Keep `~/.config/gh/config.yml` tracked, but do **not** track `~/.config/gh/hosts.yml` (contains auth tokens).
 - Do **not** commit private keys (for example `~/.ssh/id_*`); only public material/config is tracked here.
