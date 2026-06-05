@@ -41,6 +41,9 @@ alias open = ^open
 - Use `mise` as the environment/runtime manager.
 - Use `mise` for language runtime version management (JDK, npm/node, Python, Go, etc.).
 - Use `brew` for non-runtime tooling.
+- When running project tools that may be provided by `mise`, execute them from the project directory through `mise exec -- <tool> <args>` instead of assuming they are available on the agent's default `PATH`.
+  - Examples: `mise exec -- cargo test`, `mise exec -- npm test`, `mise exec -- go test ./...`, `mise exec -- java -version`.
+  - If a tool command fails because it is not found, retry with `mise exec -- ...` before reporting that the tool is unavailable.
 
 ## Security
 
