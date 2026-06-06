@@ -62,7 +62,13 @@ alias open = ^open
 
 ## GitHub
 
-- Use `gh` CLI for GitHub operations when it is available, gh has to be called from a nushell, because it is wrapped with a custom Nushell script to fetch the auth token from 1Password.
+- Use `gh` CLI for GitHub operations when it is available.
+- `gh` has to be called from Nushell, because it is wrapped with a custom Nushell script to fetch the auth token from 1Password.
+- The wrapped `gh` command requires the GitHub token owner as the first argument. Available owners are `personal` and `opensockets`.
+  - Use `gh personal <usual gh args>` for personal-account operations.
+  - Use `gh opensockets <usual gh args>` for Opensockets organization operations.
+  - Do not call plain `gh <usual gh args>`; it will fail because the token owner is missing.
+  - If unsure which token owner to use, stop the current prompt and ask the user which one to use.
 
 ## MCP servers
 
