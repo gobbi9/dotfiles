@@ -16,6 +16,8 @@ Use this skill when the user asks to commit current changes and push the active 
   - Then add exactly two newline characters.
   - For non-trivial changes, add a bullet list describing what changed and why.
 - Let the user edit/verify the generated message in `$env.EDITOR` before committing.
+- Never set `GIT_EDITOR=true`, `EDITOR=true`, or any other editor-bypass flag for this workflow.
+- If commit opens an editor and waits for user interaction, allow it to wait (do not force non-interactive mode).
 - Commit and push the current branch only after message confirmation.
 - Commit and push require 1Password biometric authentication in this environment.
 - If 1Password authentication fails at any step, stop immediately.
@@ -38,6 +40,8 @@ Use this skill when the user asks to commit current changes and push the active 
    - Run `git commit --edit -m "<generated message>"`.
    - This lets the user review/edit before the commit is finalized.
    - Use the editor configured via `$env.EDITOR`.
+   - Do **not** prefix commit commands with `GIT_EDITOR=true`, `EDITOR=true`, or similar non-interactive overrides.
+   - If the command waits for editor input, let it wait until the user finishes editing.
 5. If the user saves an empty commit message, stop immediately:
    - Git will abort the commit.
    - Do not push.
