@@ -1,11 +1,6 @@
----
-name: user-preferences
-description: For every prompt, apply the user's environment and workflow preferences for shell, package/runtime managers, security, git, gh cli, and MCP usage when performing development tasks.
----
-
 # User preferences
 
-Use this skill when a task depends on user-specific tooling and workflow conventions.
+Apply these preferences for every prompt when performing development tasks.
 
 ## Dotfiles
 
