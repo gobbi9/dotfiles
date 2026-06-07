@@ -429,6 +429,30 @@ chezmoi re-add
 chezmoi apply
 ```
 
+## Deletion caveat (important)
+
+Deleting a file/directory from the chezmoi source repo does **not** always remove the corresponding target path in `$HOME` the way you might expect, especially for directories.
+
+If you want to delete from both places reliably, prefer:
+
+```bash
+chezmoi destroy -r <target-path>
+```
+
+Example:
+
+```bash
+chezmoi destroy -r ~/.agents/skills/some-skill
+```
+
+`destroy` is intentionally dangerous: it permanently removes from the chezmoi source, the destination directory, and chezmoi state. Use it only when you really want full deletion (not just "stop managing").
+
+If you only want to stop tracking a path, use:
+
+```bash
+chezmoi forget <target-path>
+```
+
 ---
 
 # Push Local Files Back to 1Password (for `onepasswordRead` templates)
