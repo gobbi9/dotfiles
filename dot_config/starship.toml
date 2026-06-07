@@ -14,7 +14,6 @@ $directory\
 $vcsh\
 $fossil_branch\
 $fossil_metrics\
-$sudo\
 ${custom.gradle_root_project}\
 $git_branch\
 $git_commit\
@@ -98,6 +97,7 @@ ${custom.kotlin_gradle}\
 $mise\
 $cmd_duration\
 $line_break\
+$sudo\
 $jobs\
 $battery\
 $time\
@@ -700,8 +700,8 @@ symbol = " "
 [sudo]
 disabled = false
 format = '[$symbol]($style)'
-style = 'bg:red fg:white'
-symbol = "   "
+style = 'red'
+symbol = " "
 
 [swift]
 format = '\[[$symbol($version)]($style)\]'

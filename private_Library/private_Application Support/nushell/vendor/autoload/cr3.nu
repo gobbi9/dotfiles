@@ -31,6 +31,16 @@ export def "nu-complete cr3 shell-target" [] {
   ["nushell", "zsh", "bash"]
 }
 
+def "nu-complete cr3 examples" [] {
+  [
+    { value: "~/Pictures/Canon --gps ~/.cr3-keywords/track.gpx --exif" description: "Recommended default for geotagged Canon batches with reliable exiftool extraction" }
+    { value: "~/Pictures/Canon --gps ~/.cr3-keywords/track.gpx --exif --edit-prompt" description: "Same workflow, but open and tune the prompt before generating captions/keywords" }
+    { value: "~/Pictures/Canon --gps ~/.cr3-keywords/track.gpx --exif --edit-prompt --model llava --prompt ~/.cr3-keywords/prompt.txt" description: "Fully controlled run: fixed model, curated prompt, and in-session prompt edits" }
+    { value: "~/Pictures/Canon --verbose --dry-run" description: "Test mode with detailed logs to verify behavior before writing any output files" }
+    { value: "~/Pictures/Canon --clear" description: "Cleanup pass that removes generated JPG/TXT/XMP artifacts for this folder" }
+  ]
+}
+
 def "nu-complete cr3 dirs" [context: string] {
   let parts = ($context | split row " " | where { |p| $p != "" })
   let token = if ($context | str ends-with " ") {
@@ -75,12 +85,20 @@ def "nu-complete cr3 dirs" [context: string] {
       $dirs
     }
 
+    let show_examples = (($parts | length) <= 1) and ($context | str ends-with " ")
+    let completions = if $show_examples {
+      let dir_records = ($values | each { |v| { value: $v } })
+      (nu-complete cr3 examples) ++ $dir_records
+    } else {
+      $values
+    }
+
     {
       options: {
         case_sensitive: false,
         completion_algorithm: prefix,
       },
-      completions: $values
+      completions: $completions
     }
   } catch {
     []

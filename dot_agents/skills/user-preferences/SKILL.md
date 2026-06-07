@@ -27,7 +27,7 @@ Use these conventions when writing or reviewing Nushell scripts:
 - Respect aliases set in `~/Library/Application Support/nushell/config.nu`:
 
 ```nu
-# https://www.nushell.sh/book/configuration.html#macos-keeping-usr-bin-open-as-open
+# keep MacOS 'open' as 'open', and replace nushell's 'open' with 'openn'
 alias openn = open
 alias open = ^open
 ```
