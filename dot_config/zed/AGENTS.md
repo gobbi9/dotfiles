@@ -19,13 +19,21 @@ Apply these preferences for every prompt when performing development tasks.
 Use these conventions when writing or reviewing Nushell scripts:
 
 - Home directory must be accessed via `$nu.home-dir` when writing scripts, unless it is not possible otherwise.
-- Respect aliases set in `~/Library/Application Support/nushell/config.nu`:
+- Respect aliases set in `~/Library/Application Support/nushell/config.nu` (this is mandatory):
 
 ```nu
-# keep MacOS 'open' as 'open', and replace nushell's 'open' with 'openn'
+# keep MacOS 'open' as 'open', and replace Nushell's built-in 'open' with 'openn'
 alias openn = open
 alias open = ^open
 ```
+
+- **Critical rule for LLMs:** in Nushell snippets, use `openn` whenever you mean Nushell's built-in `open` command (reading/parsing files, JSON, YAML, text, etc.).
+- Do **not** use plain `open` for data loading/parsing; plain `open` is intentionally aliased to macOS `open` (`^open`) and launches apps/files/URLs.
+- Quick examples:
+  - ✅ `openn ./data.json | get name`
+  - ✅ `openn ./README.md | lines | first 5`
+  - ✅ `open https://example.com` (launch in browser)
+  - ❌ `open ./data.json | get name` (wrong: calls macOS `open`)
 
 - Subdivide Nushell scripts into small, reusable functions/components.
 - Keep each Nushell function to a maximum of 50 lines.
@@ -70,3 +78,7 @@ alias open = ^open
 - MCP services are discoverable at `GET http://localhost:8765`.
 - Refer to `~/projects/mcp/README.md`.
 - Prefer using MCP servers when one is available for the task.
+
+## Project preferences
+
+- If temporary log files or transient scripts were created by the agent for debugging, clean them up before finishing the task.
