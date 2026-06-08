@@ -16,6 +16,7 @@ Use this skill when the user asks to commit current changes and push the active 
   - Then add exactly two newline characters.
   - For non-trivial changes, add a bullet list describing what changed and why.
 - Let the user edit/verify the generated message in `$env.EDITOR` before committing.
+- When constructing shell commands that embed the generated message (for example `git commit --edit -m "<generated message>"`), escape shell-sensitive characters in the message first, especially backticks (`` ` ``), and also `$`, `\`, and `"` as needed for safe double-quoted shell usage.
 - Never set `GIT_EDITOR=true`, `EDITOR=true`, or any other editor-bypass flag for this workflow.
 - If commit opens an editor and waits for user interaction, allow it to wait (do not force non-interactive mode).
 - Commit and push the current branch only after message confirmation.
@@ -37,6 +38,7 @@ Use this skill when the user asks to commit current changes and push the active 
      - Then exactly two newline characters.
      - For non-trivial changes, include bullets like `- <change>: <reason/impact>`.
 4. Open commit editor with the generated message prefilled:
+   - Before running the commit command, escape shell-sensitive characters in `<generated message>` for safe double-quoted shell usage (at minimum: backticks, `$`, `\`, and `"`).
    - Run `git commit --edit -m "<generated message>"`.
    - This lets the user review/edit before the commit is finalized.
    - Use the editor configured via `$env.EDITOR`.
