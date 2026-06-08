@@ -680,6 +680,24 @@ git commit
 git push
 ```
 
+#### Nushell ad-hoc scripts (non-interactive)
+
+For non-interactive Nushell heredoc runs, use:
+
+```shell
+cat <<'NU' | /opt/homebrew/bin/nu -n /dev/stdin
+source '/Users/gobbi/Library/Application Support/nushell/config.nu'
+<NU_SCRIPT>
+NU
+```
+
+Notes:
+- `-n` skips normal Nushell startup; only what is explicitly `source`d runs.
+- With the current config, this flow does **not** initialize Starship prompt hooks (`starship.nu`) and does not run prompt rendering.
+- Any inherited `STARSHIP_*` environment variables may still be present from the parent shell; that alone does not mean Starship initialized in this process.
+
+This is the preferred way for Agents to run Nushell scripts that do not require interactive input.
+
 #### New machine / restore workflow
 
 ```bash

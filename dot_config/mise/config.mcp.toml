@@ -7,7 +7,8 @@ SUPERGATEWAY_CMD = "npx -y supergateway"
 TIME_MCP_CMD = "uvx mcp-server-time --local-timezone=Europe/Berlin"
 FETCH_MCP_CMD = "uvx mcp-server-fetch"
 INSPECTOR_CMD = "npx @modelcontextprotocol/inspector"
-GITHUB_MCP_CMD = "sh -lc 'GITHUB_PERSONAL_ACCESS_TOKEN=op://Personal/gh-cli/token exec op run -- github-mcp-server stdio'"
+GITHUB_PERSONAL_MCP_CMD = "sh -lc 'GITHUB_PERSONAL_ACCESS_TOKEN=op://Personal/gh-cli/token exec op run -- github-mcp-server stdio'"
+GITHUB_OPENSOCKETS_MCP_CMD = "sh -lc 'GITHUB_PERSONAL_ACCESS_TOKEN=op://Opensockets/gh-cli/token exec op run -- github-mcp-server stdio'"
 
 [tools]
 caddy = "latest"
@@ -27,6 +28,10 @@ run = 'npx -y supergateway --stdio "{{env.FETCH_MCP_CMD}}" --outputTransport str
 description = "Interactive MCP Inspector web UI for debugging servers and tools. (direct (inferred streamableHttp))"
 run = "{{env.INSPECTOR_CMD}}"
 
-[tasks.mcp-github]
-description = "Use for GitHub repository operations via MCP tools (issues, PRs, code, metadata). (stdio -> streamableHttp via supergateway)"
-run = 'npx -y supergateway --stdio "{{env.GITHUB_MCP_CMD}}" --outputTransport streamableHttp --port 10003 --cors'
+[tasks.mcp-github-personal]
+description = "Use for GitHub repository operations via MCP tools (issues, PRs, code, metadata) with personal account token. (stdio -> streamableHttp via supergateway)"
+run = 'npx -y supergateway --stdio "{{env.GITHUB_PERSONAL_MCP_CMD}}" --outputTransport streamableHttp --port 10003 --cors'
+
+[tasks.mcp-github-opensockets]
+description = "Use for GitHub repository operations via MCP tools (issues, PRs, code, metadata) with opensockets org token. (stdio -> streamableHttp via supergateway)"
+run = 'npx -y supergateway --stdio "{{env.GITHUB_OPENSOCKETS_MCP_CMD}}" --outputTransport streamableHttp --port 10004 --cors'

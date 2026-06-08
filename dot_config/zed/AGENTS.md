@@ -33,13 +33,13 @@ Precedence:
 - Execute Nushell commands by explicitly loading config from `'/Users/gobbi/Library/Application Support/nushell/config.nu'`.
 - Write readable, line-separated scripts for **intermediate operations**, by using heredoc piping for multi-line commands:
   ```shell
-  cat <<'NU' | /opt/homebrew/bin/nu -n
+  cat <<'NU' | /opt/homebrew/bin/nu -n /dev/stdin
   source '/Users/gobbi/Library/Application Support/nushell/config.nu'
   <NU_SCRIPT>
   NU
   ```
   - NEVER write a temporary `.nu` script file to run it with `/opt/homebrew/bin/nu -n <script.nu>`, unless user explicitly requests it.
-  - NEVER use `nu -n -c "source '/Users/gobbi/Library/Application Support/nushell/config.nu'; <NU_COMMAND>"`, not even for short single-line commands, , unless user explicitly requests it.
+  - NEVER use `nu -n -c "source '/Users/gobbi/Library/Application Support/nushell/config.nu'; <NU_COMMAND>"`, not even for short single-line commands, unless user explicitly requests it.
 
 ## Nushell scripting conventions
 
