@@ -30,14 +30,23 @@ Precedence:
 - `nushell` autoload scripts should be placed in `~/Library/Application Support/nushell/vendor/autoload`.
 - Provide shell snippets in optimized Nushell unless the user asks otherwise.
 - Prefer Nushell scripts over Python scripts for intermediate steps. Do not use Python scripts for intermediate steps unless the user asks otherwise.
-- Execute nushell commands with `nu -n -c "source '/Users/gobbi/Library/Application Support/nushell/config.nu'; <NU_COMMAND>"`
+- Execute Nushell commands by explicitly loading config from `'/Users/gobbi/Library/Application Support/nushell/config.nu'`.
+- Write readable, line-separated scripts for **intermediate operations**, by using heredoc piping for multi-line commands:
+  ```shell
+  cat <<'NU' | /opt/homebrew/bin/nu -n
+  source '/Users/gobbi/Library/Application Support/nushell/config.nu'
+  <NU_SCRIPT>
+  NU
+  ```
+  - NEVER write a temporary `.nu` script file to run it with `/opt/homebrew/bin/nu -n <script.nu>`, unless user explicitly requests it.
+  - NEVER use `nu -n -c "source '/Users/gobbi/Library/Application Support/nushell/config.nu'; <NU_COMMAND>"`, not even for short single-line commands, , unless user explicitly requests it.
 
 ## Nushell scripting conventions
 
 Use these conventions when writing or reviewing Nushell scripts:
 
 - Home directory must be accessed via `$nu.home-dir` when writing scripts, unless it is not possible otherwise.
-- Respect aliases set in `~/Library/Application Support/nushell/config.nu` (this is mandatory):
+- Use aliases set in `~/Library/Application Support/nushell/config.nu` (this is mandatory):
 
 ```nu
 # keep MacOS 'open' as 'open', and replace Nushell's built-in 'open' with 'openn'
