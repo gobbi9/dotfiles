@@ -1,9 +1,8 @@
 # Dotfiles with chezmoi
 
-This repository manages personal configuration files using
-[chezmoi](https://www.chezmoi.io/).
+This repository manages personal configuration files using [chezmoi](https://www.chezmoi.io/).
 
-The goal is:
+The goal is to:
 
 - version configs with Git
 - back them up remotely
@@ -14,7 +13,9 @@ The goal is:
 
 ---
 
-# Why chezmoi?
+## Core chezmoi model
+
+### Why chezmoi?
 
 Initially considered:
 
@@ -22,9 +23,9 @@ Initially considered:
 - symlink-based approaches (`stow`)
 - plain Git repos
 
-But each had drawbacks:
+But each had drawbacks.
 
-## Bare Git repo drawbacks
+#### Bare Git repo drawbacks
 
 Although elegant, it has poor editor UX:
 
@@ -34,14 +35,14 @@ Although elegant, it has poor editor UX:
 - requires hiding untracked files
 - `.gitignore` handling becomes awkward
 
-## Symlink drawbacks
+#### Symlink drawbacks
 
 Personally disliked because:
 
 - hard to remember what is a symlink vs real file
 - filesystem truth becomes less obvious
 
-## Why chezmoi won
+#### Why chezmoi won
 
 chezmoi provides:
 
@@ -52,11 +53,227 @@ chezmoi provides:
 - explicit sync behavior
 - better editor UX
 
+### Important mental model
+
+chezmoi has TWO SIDES:
+
+```text
+REAL FILESYSTEM
+        ↕
+CHEZMOI SOURCE REPO
+```
+
+You explicitly sync between them.
+
+### Core commands
+
+#### Pull filesystem changes INTO chezmoi repo
+
+Meaning:
+
+```text
+filesystem -> source repo
+```
+
+Command:
+
+```bash
+chezmoi add <path>
+```
+
+Examples:
+
+```bash
+chezmoi add ~/.gitconfig
+chezmoi add ~/.config/mise
+```
+
+For already-managed files:
+
+```bash
+chezmoi re-add
+```
+
+This is effectively:
+
+> "pull changes into repo"
+
+#### Push chezmoi repo changes TO filesystem
+
+Meaning:
+
+```text
+source repo -> filesystem
+```
+
+Command:
+
+```bash
+chezmoi apply
+```
+
+Examples:
+
+```bash
+chezmoi apply
+chezmoi apply ~/.gitconfig
+```
+
+This is effectively:
+
+> "push repo state to machine"
+
+### Very important behavior
+
+`chezmoi apply` can overwrite filesystem changes.
+
+⚠️ For files rendered from 1Password templates, `chezmoi diff` resolves secret values (after 1Password authentication/biometric confirmation when required) and can print sensitive plaintext content to your terminal.
+
+Safe workflow:
+
+```bash
+chezmoi diff
+```
+
+Then decide.
+
+#### Keep filesystem changes
+
+```bash
+chezmoi re-add
+```
+
+#### Overwrite filesystem with repo version
+
+```bash
+chezmoi apply
+```
+
+#### Deletion caveat (important)
+
+Deleting a file/directory from the chezmoi source repo does **not** always remove the corresponding target path in `$HOME` the way you might expect, especially for directories.
+
+If you want to delete from both places reliably, prefer:
+
+```bash
+chezmoi destroy -r <target-path>
+```
+
+Example:
+
+```bash
+chezmoi destroy -r ~/.agents/skills/some-skill
+```
+
+`destroy` is intentionally dangerous: it permanently removes from the chezmoi source, the destination directory, and chezmoi state. Use it only when you really want full deletion (not just "stop managing").
+
+If you only want to stop tracking a path, use:
+
+```bash
+chezmoi forget <target-path>
+```
+
+### Important confusions learned
+
+#### Source filenames are NOT target filenames
+
+chezmoi renames files internally:
+
+| Real Path | Source Repo |
+|---|---|
+| `~/.gitconfig` | `dot_gitconfig` |
+| `~/.config` | `dot_config` |
+| private files | `private_*` |
+
+These are implementation details.
+
+Commands generally expect REAL TARGET PATHS.
+
+Correct:
+
+```bash
+chezmoi apply ~/.gitconfig
+```
+
+Wrong:
+
+```bash
+chezmoi apply dot_gitconfig
+```
+
+### About `.chezmoiignore`
+
+Location:
+
+```text
+~/.local/share/chezmoi/.chezmoiignore
+```
+
+Paths are relative to chezmoi source repo structure, NOT relative to `~`.
+
+Example:
+
+```gitignore
+private_Library/private_Application Support/nushell/history.txt
+```
+
+NOT:
+
+```gitignore
+~/Library/Application Support/nushell/history.txt
+```
+
+### Useful commands
+
+#### Show differences
+
+```bash
+chezmoi diff
+```
+
+#### Show managed files with differences
+
+```bash
+chezmoi status
+```
+
+#### Show managed files
+
+```bash
+chezmoi managed
+```
+
+#### Dry run apply
+
+```bash
+chezmoi apply --dry-run
+```
+
+#### Remove file from chezmoi management
+
+```bash
+chezmoi forget <path>
+```
+
+Example:
+
+```bash
+chezmoi forget "~/Library/Application Support/nushell/history.txt"
+```
+
+### Notes
+
+- chezmoi is NOT a live sync system
+- it does NOT automatically watch files
+- sync direction is explicit
+- source repo is considered canonical state
+- runtime/cache/history files should usually be ignored
+
 ---
 
-# Managed Files
+## Managed state (what this repo tracks)
 
-## Individual Files
+### Individual files
 
 ```text
 ~/.gitconfig
@@ -73,7 +290,7 @@ chezmoi provides:
 ~/Library/Preferences/NSUserDictionaryReplacementItems.plist (rendered from 1Password template for macOS text replacements)
 ```
 
-## Managed Directories
+### Managed directories
 
 ```text
 ~/.config/mise
@@ -88,11 +305,11 @@ history.txt
 
 ---
 
-# Zed Configuration & Extensions
+## Zed configuration & extensions
 
 Use this repo to fully restore your Zed setup on a new machine.
 
-## Files to Track
+### Files to track
 
 Track these global Zed config files:
 
@@ -111,7 +328,7 @@ Notes:
 - `tasks.json`, `snippets/`, and `themes/` are optional (only add if you use them).
 - Do **not** track `~/Library/Application Support/Zed/extensions/installed` (runtime artifacts, machine-local).
 
-## Tracking Installed Extensions (Portable Way)
+### Tracking installed extensions (portable way)
 
 Track extension IDs through `settings.json` using `auto_install_extensions`.
 
@@ -132,7 +349,7 @@ It reads currently installed Zed extensions and then does everything end-to-end:
 6) runs: chezmoi add ~/.config/zed/themes        (if present)
 ```
 
-### Usage
+#### Usage
 
 From repo root:
 
@@ -150,7 +367,7 @@ The script is idempotent:
 - it is safe to rerun after every extension install/remove
 - it only runs `chezmoi add` for paths that exist (optional paths are skipped when missing)
 
-## New Machine Restore Flow (Zed)
+### New machine restore flow (Zed)
 
 ```bash
 cd ~/.local/share/chezmoi
@@ -159,9 +376,47 @@ chezmoi apply
 
 Then open Zed once. Zed reads `auto_install_extensions` and installs listed extensions automatically.
 
+### Zed agent instructions vs skills
+
+Language/framework preference docs were originally placed under `~/.agents/skills/*-preferences`. That was changed on purpose:
+
+- `skills/` is now reserved for true on-demand capabilities (for example `commit-push`).
+- Always-applicable coding guidance now lives in:
+
+```text
+~/.agents/instructions/
+```
+
+Current instruction packs:
+
+```text
+~/.agents/instructions/go-preferences/
+~/.agents/instructions/gradle-preferences/
+~/.agents/instructions/javascript-preferences/
+~/.agents/instructions/jvm-preferences/
+~/.agents/instructions/kotlin-preferences/
+~/.agents/instructions/typescript-preferences/
+```
+
+Why this split:
+
+- keeps semantic separation clear (on-demand skill vs baseline instruction)
+- avoids pretending preference documents are slash-command skills
+- supports a lazy-load protocol in `~/.config/zed/AGENTS.md` so language-specific guidance is only loaded when matching project signals are present
+
+Important note:
+
+- `~/.agents/instructions/` is a personal/project convention, not an official Zed convention.
+- Zed currently does not provide an official built-in mechanism to lazily load additional instruction files for `AGENTS.md`.
+- The lazy-loading behavior described here is implemented as an instruction policy for agents to follow, not a guaranteed eager-vs-lazy loader feature of Zed itself.
+
+Migration note:
+
+- old `~/.agents/skills/*-preferences` entries were removed from chezmoi-managed state with `chezmoi destroy`.
+
 ---
 
-# macOS Settings
+## macOS settings
 
 To track selected macOS settings, this repo includes:
 
@@ -225,7 +480,61 @@ If shortcuts or text replacements do not refresh immediately, log out/in (or reb
 
 ---
 
-# New Mac Bootstrap Order (Dependency-First)
+## Secrets and 1Password
+
+### Push local files back to 1Password (for `onepasswordRead` templates)
+
+Templates like:
+
+- `dot_config/scans/scans.csv.tmpl`
+- `dot_config/scans/all-tags.txt.tmpl`
+- `private_Library/Preferences/private_NSUserDictionaryReplacementItems.plist.tmpl`
+
+use `onepasswordRead "op://..."` references.
+
+Important: `onepasswordRead` is read-only from chezmoi's perspective (1Password -> rendered local file). If you changed a local rendered file and want that change in 1Password, run the helper script from the repo root:
+
+```bash
+cd ~/.local/share/chezmoi
+./push-templates-to-1password.nu --dry-run
+./push-templates-to-1password.nu
+chezmoi apply # for tmpl files choose "overwrite" to update chezmoi state
+chezmoi diff # should not output anything
+```
+
+What it does:
+
+- scans all `*.tmpl` files in the chezmoi source directory
+- extracts every `onepasswordRead` `op://...` reference
+- resolves each template's local target via `chezmoi target-path`
+- reads the local target file content
+- updates standard fields by exact `id`/`label` via item JSON template edits
+- if the ref points to a file attachment (for example `all-tags.txt`), updates it via escaped `[file]` assignment so dotted names are handled correctly
+
+Behavior:
+
+- `--dry-run` prints intended updates only
+- in apply mode, the script prints each `op://...` ref before any `op` call (before biometric prompt)
+- works for new templates automatically (no hardcoded scans paths)
+- skips missing local target files with warnings
+- exits non-zero if any update fails
+
+### Public repo safety notes
+
+This dotfiles repo is designed to be shareable/public.
+
+- Secrets are managed via 1Password at runtime (not committed in this repo).
+- `~/.config/scans/scans.csv`, `~/.config/scans/all-tags.txt`, and `~/Library/Preferences/NSUserDictionaryReplacementItems.plist` are managed via chezmoi templates that call `onepasswordRead`.
+- Raw source copies (`dot_config/scans/scans.csv`, `dot_config/scans/all-tags.txt`, and `private_Library/Preferences/private_NSUserDictionaryReplacementItems.plist`) are blocked by `.gitignore`; sensitive runtime/auth files are also blocked by `.chezmoiignore` where appropriate.
+- Sensitive/runtime files are explicitly blocked by both `.chezmoiignore` (apply scope) and `.gitignore` (commit scope).
+- Keep `~/.config/gh/config.yml` tracked, but do **not** track `~/.config/gh/hosts.yml` (contains auth tokens).
+- Do **not** commit private keys (for example `~/.ssh/id_*`); only public material/config is tracked here.
+
+---
+
+## Machine lifecycle (bootstrap, setup, daily use)
+
+### New Mac bootstrap order (dependency-first)
 
 Verified for this repo:
 
@@ -253,9 +562,35 @@ graph TD
 
 Note: `git clone https://...` keeps full git history; the later `git remote set-url` step only switches `origin` from HTTPS to SSH.
 
----
+### Homebrew Bundle (`Brewfile`)
 
-# Setup
+The repo includes a `Brewfile` in the repo root (`~/.local/share/chezmoi/Brewfile`).
+
+#### Update `Brewfile` from current machine
+
+From the repo root:
+
+```bash
+cd ~/.local/share/chezmoi
+brew bundle dump --force
+```
+
+#### Import/install from `Brewfile`
+
+On a new or existing machine:
+
+```bash
+cd ~/.local/share/chezmoi
+brew bundle
+```
+
+Optional check-only mode:
+
+```bash
+brew bundle check
+```
+
+### Setup (initial repository bootstrap)
 
 Install:
 
@@ -325,274 +660,9 @@ Create GitHub repo:
 gh repo create gobbi9/dotfiles --private --source=. --remote=origin --push
 ```
 
----
+### Recommended workflow
 
-# Important Mental Model
-
-chezmoi has TWO SIDES:
-
-```text
-REAL FILESYSTEM
-        ↕
-CHEZMOI SOURCE REPO
-```
-
-You explicitly sync between them.
-
----
-
-# Core Commands
-
-## Pull filesystem changes INTO chezmoi repo
-
-Meaning:
-
-```text
-filesystem -> source repo
-```
-
-Command:
-
-```bash
-chezmoi add <path>
-```
-
-Examples:
-
-```bash
-chezmoi add ~/.gitconfig
-chezmoi add ~/.config/mise
-```
-
-For already-managed files:
-
-```bash
-chezmoi re-add
-```
-
-This is effectively:
-
-> "pull changes into repo"
-
----
-
-## Push chezmoi repo changes TO filesystem
-
-Meaning:
-
-```text
-source repo -> filesystem
-```
-
-Command:
-
-```bash
-chezmoi apply
-```
-
-Examples:
-
-```bash
-chezmoi apply
-chezmoi apply ~/.gitconfig
-```
-
-This is effectively:
-
-> "push repo state to machine"
-
----
-
-# Very Important Behavior
-
-`chezmoi apply` can overwrite filesystem changes.
-
-⚠️ For files rendered from 1Password templates, `chezmoi diff` resolves secret values (after 1Password authentication/biometric confirmation when required) and can print sensitive plaintext content to your terminal.
-
-Safe workflow:
-
-```bash
-chezmoi diff
-```
-
-then decide:
-
-## Keep filesystem changes
-
-```bash
-chezmoi re-add
-```
-
-## Overwrite filesystem with repo version
-
-```bash
-chezmoi apply
-```
-
-## Deletion caveat (important)
-
-Deleting a file/directory from the chezmoi source repo does **not** always remove the corresponding target path in `$HOME` the way you might expect, especially for directories.
-
-If you want to delete from both places reliably, prefer:
-
-```bash
-chezmoi destroy -r <target-path>
-```
-
-Example:
-
-```bash
-chezmoi destroy -r ~/.agents/skills/some-skill
-```
-
-`destroy` is intentionally dangerous: it permanently removes from the chezmoi source, the destination directory, and chezmoi state. Use it only when you really want full deletion (not just "stop managing").
-
-If you only want to stop tracking a path, use:
-
-```bash
-chezmoi forget <target-path>
-```
-
----
-
-# Push Local Files Back to 1Password (for `onepasswordRead` templates)
-
-Templates like:
-
-- `dot_config/scans/scans.csv.tmpl`
-- `dot_config/scans/all-tags.txt.tmpl`
-- `private_Library/Preferences/private_NSUserDictionaryReplacementItems.plist.tmpl`
-
-use `onepasswordRead "op://..."` references.
-
-Important: `onepasswordRead` is read-only from chezmoi's perspective (1Password -> rendered local file).
-If you changed a local rendered file and want that change in 1Password, run the helper script from the repo root:
-
-```bash
-cd ~/.local/share/chezmoi
-./push-templates-to-1password.nu --dry-run
-./push-templates-to-1password.nu
-chezmoi apply # for tmpl files choose "overwrite" to update chezmoi state
-chezmoi diff # should not output anything
-```
-
-What it does:
-
-- scans all `*.tmpl` files in the chezmoi source directory
-- extracts every `onepasswordRead` `op://...` reference
-- resolves each template's local target via `chezmoi target-path`
-- reads the local target file content
-- updates standard fields by exact `id`/`label` via item JSON template edits
-- if the ref points to a file attachment (for example `all-tags.txt`), updates it via escaped `[file]` assignment so dotted names are handled correctly
-
-Behavior:
-
-- `--dry-run` prints intended updates only
-- in apply mode, the script prints each `op://...` ref before any `op` call (before biometric prompt)
-- works for new templates automatically (no hardcoded scans paths)
-- skips missing local target files with warnings
-- exits non-zero if any update fails
-
----
-
-# Useful Commands
-
-## Show differences
-
-```bash
-chezmoi diff
-```
-
-## Show managed files with differences
-
-```bash
-chezmoi status
-```
-
-## Show managed files
-
-```bash
-chezmoi managed
-```
-
-## Dry run apply
-
-```bash
-chezmoi apply --dry-run
-```
-
-## Remove file from chezmoi management
-
-```bash
-chezmoi forget <path>
-```
-
-Example:
-
-```bash
-chezmoi forget "~/Library/Application Support/nushell/history.txt"
-```
-
----
-
-# Important Confusions Learned
-
-## Source filenames are NOT target filenames
-
-chezmoi renames files internally:
-
-| Real Path | Source Repo |
-|---|---|
-| `~/.gitconfig` | `dot_gitconfig` |
-| `~/.config` | `dot_config` |
-| private files | `private_*` |
-
-These are implementation details.
-
-Commands generally expect REAL TARGET PATHS.
-
-Correct:
-
-```bash
-chezmoi apply ~/.gitconfig
-```
-
-Wrong:
-
-```bash
-chezmoi apply dot_gitconfig
-```
-
----
-
-# About `.chezmoiignore`
-
-Location:
-
-```text
-~/.local/share/chezmoi/.chezmoiignore
-```
-
-Paths are relative to chezmoi source repo structure,
-NOT relative to `~`.
-
-Example:
-
-```gitignore
-private_Library/private_Application Support/nushell/history.txt
-```
-
-NOT:
-
-```gitignore
-~/Library/Application Support/nushell/history.txt
-```
-
----
-
-# Recommended Workflow
-
-## Daily usage
+#### Daily usage
 
 Edit real files normally:
 
@@ -610,7 +680,7 @@ git commit
 git push
 ```
 
-## New machine / restore workflow
+#### New machine / restore workflow
 
 ```bash
 git pull
@@ -619,60 +689,7 @@ chezmoi apply
 
 ---
 
-# Homebrew Bundle (`Brewfile`)
-
-The repo includes a `Brewfile` in the repo root (`~/.local/share/chezmoi/Brewfile`).
-
-## Update `Brewfile` from current machine
-
-From the repo root:
-
-```bash
-cd ~/.local/share/chezmoi
-brew bundle dump --force
-```
-
-## Import/install from `Brewfile`
-
-On a new or existing machine:
-
-```bash
-cd ~/.local/share/chezmoi
-brew bundle
-```
-
-Optional check-only mode:
-
-```bash
-brew bundle check
-```
-
----
-
-# Notes
-
-- chezmoi is NOT a live sync system
-- it does NOT automatically watch files
-- sync direction is explicit
-- source repo is considered canonical state
-- runtime/cache/history files should usually be ignored
-
----
-
-# Public Repo Safety Notes
-
-This dotfiles repo is designed to be shareable/public.
-
-- Secrets are managed via 1Password at runtime (not committed in this repo).
-- `~/.config/scans/scans.csv`, `~/.config/scans/all-tags.txt`, and `~/Library/Preferences/NSUserDictionaryReplacementItems.plist` are managed via chezmoi templates that call `onepasswordRead`.
-- Raw source copies (`dot_config/scans/scans.csv`, `dot_config/scans/all-tags.txt`, and `private_Library/Preferences/private_NSUserDictionaryReplacementItems.plist`) are blocked by `.gitignore`; sensitive runtime/auth files are also blocked by `.chezmoiignore` where appropriate.
-- Sensitive/runtime files are explicitly blocked by both `.chezmoiignore` (apply scope) and `.gitignore` (commit scope).
-- Keep `~/.config/gh/config.yml` tracked, but do **not** track `~/.config/gh/hosts.yml` (contains auth tokens).
-- Do **not** commit private keys (for example `~/.ssh/id_*`); only public material/config is tracked here.
-
----
-
-# Repository Location
+## Repository location
 
 chezmoi source repo:
 

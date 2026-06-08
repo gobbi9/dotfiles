@@ -6,6 +6,24 @@ Apply these preferences for every prompt when performing development tasks.
 
 - Dotfiles are managed by `chezmoi` in `~/.local/share/chezmoi`.
 
+## Instruction packs (lazy load protocol)
+
+Do not read all packs up front.
+
+Load only when task signals match:
+
+- Go signals: `go.mod`, `*.go` -> read `~/.agents/instructions/go-preferences/SKILL.md`
+- TS/JS signals: `package.json`, `tsconfig.json`, `*.ts`, `*.tsx`, `*.js` -> read `~/.agents/instructions/typescript-preferences/SKILL.md` and `~/.agents/instructions/javascript-preferences/SKILL.md` as needed
+- Kotlin signals: `*.kt`, `build.gradle.kts`, `settings.gradle.kts` -> read `~/.agents/instructions/kotlin-preferences/SKILL.md`
+- JVM signals: `pom.xml`, `build.gradle`, `build.gradle.kts`, `settings.gradle`, `settings.gradle.kts`, `*.java` -> read `~/.agents/instructions/jvm-preferences/SKILL.md`
+- Gradle signals: `gradle.properties`, `build.gradle`, `build.gradle.kts`, `settings.gradle`, `settings.gradle.kts`, `gradle/libs.versions.toml` -> read `~/.agents/instructions/gradle-preferences/SKILL.md`
+
+Precedence:
+1) user request
+2) repo-local `AGENTS.md`
+3) loaded instruction pack
+4) global defaults
+
 ## Terminal
 
 - `nushell` is the login shell, installed in `/opt/homebrew/bin/nu`, configured in `~/Library/Application Support/nushell/config.nu`.
