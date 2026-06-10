@@ -84,6 +84,13 @@ alias open = ^open
 - If sensitive information is printed to the terminal, inform the user immediately so keys/tokens can be rotated.
 - If the user declines access to required tokens or SSH keys, stop the current task and report that it is blocked.
 
+## Directory discovery safety
+
+- Never run broad recursive searches from the home directory (for example: `find ~ ...`, `find /Users/<user> ...`, or equivalent).
+- If a needed directory location is unknown, ask the user for the exact base path before searching.
+- Prefer scoped searches under the user-provided directory only.
+- Example: for most git projects, ask for and use `~/projects/*` (or the user-provided path) instead of scanning `~`.
+
 ## Git
 
 - Use `git` for version control.

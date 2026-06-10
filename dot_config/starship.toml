@@ -1,6 +1,7 @@
 "$schema" = 'https://starship.rs/config-schema.json'
 
 scan_timeout = 5000  # increase from default 30ms
+command_timeout = 5000
 
 format = """
 $username\
@@ -238,7 +239,7 @@ format = '\[[+$added]($added_style)\]\[[-$deleted]($deleted_style)\]'
 format = '\[[$state ($progress_current/$progress_total)]($style)\]'
 
 [git_status]
-format = '([\[$all_status$ahead_behind\]]($style))'
+format = '(\[[$all_status$ahead_behind]($style)\])'
 modified = '!${count}'
 staged = '+${count}'
 untracked = '?${count}'
@@ -490,11 +491,14 @@ let packages = (
 
 if (($packages | length) == 0) { exit 1 }
 
+let pkg_style = (ansi --escape { fg: '#ff8700' attr: b })
+let reset = (ansi reset)
+
 $packages
-| each {|pkg| $"[󰏗 ($pkg.name) v($pkg.version)]" }
+| each {|pkg| $"[($pkg_style)󰏗 ($pkg.name) v($pkg.version)($reset)]" }
 | str join ""
 '''
-format = "[$output]($style)"
+format = "($output)"
 style = "208 bold"
 ignore_timeout = true
 shell = ["/opt/homebrew/bin/nu", "-l", "-c"]
@@ -633,7 +637,7 @@ if $version == "" {
 
 $"󰏖 ($name) v($version)"
 '''
-format = '\[[$output]($style)\]'
+format = '(\[[$output]($style)\])'
 style = "bold white"
 shell = ["/opt/homebrew/bin/nu", "-l", "-c"]
 
@@ -738,7 +742,7 @@ if ($out == "") {
 
 $out
 '''
-format = '\[[$output]($style)\]'
+format = '(\[[$output]($style)\])'
 style = "yellow bold"
 shell = ["/opt/homebrew/bin/nu", "-l", "-c"]
 
@@ -858,7 +862,7 @@ if $version == "" {
 
 $"󱈙 v($version)"
 '''
-format = '\[[$output]($style)\]'
+format = '(\[[$output]($style)\])'
 style = "bold blue"
 shell = ["/opt/homebrew/bin/nu", "-l", "-c"]
 
