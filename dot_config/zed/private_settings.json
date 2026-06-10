@@ -1,4 +1,5 @@
 {
+  "show_edit_predictions": true,
   "git": {
     "branch_picker": {
       "show_author_name": true
@@ -63,6 +64,9 @@
     "tool_permissions": {
       "default": "allow",
       "tools": {
+        "create_directory": {
+          "default": "allow"
+        },
         "move_path": {
           "default": "allow"
         },

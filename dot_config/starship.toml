@@ -97,7 +97,6 @@ $crystal\
 ${custom.mise_python}\
 ${custom.kotlin_gradle}\
 $mise\
-$cmd_duration\
 $line_break\
 $sudo\
 $jobs\
@@ -108,6 +107,7 @@ $container\
 $netns\
 $os\
 $shell\
+$cmd_duration\
 $character
 """
 
@@ -145,6 +145,8 @@ symbol = " "
 
 [cmd_duration]
 format = '\[[⏱ $duration]($style)\]'
+show_milliseconds = true
+min_time = 0
 
 [cobol]
 format = '\[[$symbol($version)]($style)\]'
