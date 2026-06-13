@@ -17,6 +17,7 @@ Load only when task signals match:
 - Kotlin signals: `*.kt`, `build.gradle.kts`, `settings.gradle.kts` -> read `~/.agents/instructions/kotlin-preferences/SKILL.md`
 - JVM signals: `pom.xml`, `build.gradle`, `build.gradle.kts`, `settings.gradle`, `settings.gradle.kts`, `*.java` -> read `~/.agents/instructions/jvm-preferences/SKILL.md`
 - Gradle signals: `gradle.properties`, `build.gradle`, `build.gradle.kts`, `settings.gradle`, `settings.gradle.kts`, `gradle/libs.versions.toml` -> read `~/.agents/instructions/gradle-preferences/SKILL.md`
+- Terraform signals: `*.tf`, `*.tfvars`, `.terraform.lock.hcl`, `terragrunt.hcl` -> read `~/.agents/instructions/terraform-preferences/SKILL.md`
 
 Precedence:
 1) user request
@@ -64,6 +65,7 @@ alias open = ^open
 
 - Subdivide Nushell scripts into small, reusable functions/components.
 - Keep each Nushell function to a maximum of 50 lines.
+- Always create custom Nushell error messages with `--unspanned` (for example: `error make --unspanned { msg: "..." }`).
 
 ## Preferred tools
 
