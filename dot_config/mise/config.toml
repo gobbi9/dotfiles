@@ -4,6 +4,7 @@ MISE_EXPERIMENTAL = 1
 [tools]
 go = "latest"
 java = "zulu-25"
+"npm:@mermaid-js/mermaid-cli" = "latest"
 node = "lts"
 uv = "latest"
 

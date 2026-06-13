@@ -118,3 +118,29 @@ alias open = ^open
 ## Project preferences
 
 - If temporary log files or transient scripts were created by the agent for debugging, clean them up before finishing the task.
+
+## Diagrams
+
+- Use Mermaid diagrams in `.md` files unless the user asks otherwise.
+- Use `TD` layout by default unless the user asks otherwise.
+- Avoid separating lines with semicolons (`;`) in Mermaid diagrams, if not strictly necessary.
+- Avoid Mermaid/GitHub renderer keywords as node/identifier names. Reserve these for syntax only, and prefer alternatives like `finish`, `done`, `group`, `go_down`, etc.
+  - Examples to avoid as identifiers: `end`, `subgraph`, `graph`, `flowchart`, `direction`, `class`, `classDef`, `style`, `linkStyle`, `click`.
+
+### Mermaid validation runtime (mmdc)
+
+- Validate Mermaid diagrams with `mise exec -- mmdc`.
+- `mmdc` needs a Puppeteer browser runtime. On this machine, prefer a Chromium-family executable at:
+
+  - `/Applications/Vivaldi.app/Contents/MacOS/Vivaldi`
+
+- Do **not** assume Chrome is installed.
+- Do **not** use Firefox for `mmdc` unless explicitly requested and confirmed working; default flow should use Vivaldi executablePath.
+
+- When validating diagrams, pass a Puppeteer config file to `mmdc` with `-p` containing:
+
+  ```json
+  {
+    "executablePath": "/Applications/Vivaldi.app/Contents/MacOS/Vivaldi",
+    "args": ["--no-sandbox", "--disable-setuid-sandbox"]
+  }
