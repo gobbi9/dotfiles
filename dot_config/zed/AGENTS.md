@@ -66,6 +66,7 @@ alias open = ^open
 - Subdivide Nushell scripts into small, reusable functions/components.
 - Keep each Nushell function to a maximum of 50 lines.
 - Always create custom Nushell error messages with `--unspanned` (for example: `error make --unspanned { msg: "..." }`).
+- Validate nushell scripts for deprecation warnings, and fix any deprecated commands.
 
 ## Preferred tools
 
@@ -92,6 +93,16 @@ alias open = ^open
 - If a needed directory location is unknown, ask the user for the exact base path before searching.
 - Prefer scoped searches under the user-provided directory only.
 - Example: for most git projects, ask for and use `~/projects/*` (or the user-provided path) instead of scanning `~`.
+
+## Markdown formatting
+
+- Sub-elements from lists (ordered or unordered) should be indented with at least 4 spaces, i.e.:
+
+```markdown
+- Item 1
+    - Sub-item 1
+    - Sub-item 2
+```
 
 ## Git
 
