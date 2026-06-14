@@ -330,7 +330,9 @@ symbol = "󰔷 "
 [mise]
 disabled = false
 format = '\[[$symbol$health]($style)\]'
-symbol = "󰭼 "
+symbol = "󰬔 "
+healthy_symbol = "󰋑 "
+unhealthy_symbol = "󰋔 "
 
 [mojo]
 format = '\[[$symbol($version)]($style)\]'
@@ -739,7 +741,7 @@ if ($head_tags != "") {
   }
 }
 if ($out == "") {
-  $out = "no tags"
+  $out = "󱈠·"
 }
 
 $out
