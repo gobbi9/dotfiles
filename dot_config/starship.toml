@@ -15,7 +15,6 @@ $directory\
 $vcsh\
 $fossil_branch\
 $fossil_metrics\
-${custom.gradle_root_project}\
 $git_branch\
 $git_commit\
 ${custom.git_tags}\
@@ -25,9 +24,10 @@ $git_status\
 $hg_branch\
 $hg_state\
 $pijul_channel\
-$docker_context\
+${custom.gradle_root_project}\
 ${custom.rust_workspace_packages}\
 $package\
+$docker_context\
 $bun\
 $c\
 $cmake\
@@ -440,7 +440,7 @@ Zorin = " "
 [package]
 format = '[$symbol$version]($style) '
 symbol = "󰏗 "
-style = "208 bold"
+style = "bold white"
 
 [custom.rust_workspace_packages]
 description = "Show all Rust workspace packages with versions"
@@ -495,15 +495,34 @@ let packages = (
 
 if (($packages | length) == 0) { exit 1 }
 
-let pkg_style = (ansi --escape { fg: '#ff8700' attr: b })
-let reset = (ansi reset)
+let groups = (
+  $packages
+  | reduce --fold [] {|pkg, acc|
+      if (($acc | length) == 0) {
+        [{ version: $pkg.version, names: [$pkg.name] }]
+      } else {
+        let last = ($acc | last)
+        if $last.version == $pkg.version {
+          let n = ($acc | length)
+          let head = if $n > 1 { $acc | first ($n - 1) } else { [] }
+          $head | append { version: $last.version, names: ($last.names | append $pkg.name) }
+        } else {
+          $acc | append { version: $pkg.version, names: [$pkg.name] }
+        }
+      }
+    }
+)
 
-$packages
-| each {|pkg| $"($pkg_style)󰏗 ($pkg.name) v($pkg.version)($reset)" }
-| str join ""
+let rendered = (
+  $groups
+  | each {|g| $"󰏗 ($g.names | str join ' ') v($g.version)" }
+  | str join " "
+)
+
+$"($rendered)"
 '''
-format = "($output) "
-style = "208 bold"
+format = "[$output]($style) "
+style = "bold white"
 ignore_timeout = true
 shell = ["/opt/homebrew/bin/nu", "-l", "-c"]
 

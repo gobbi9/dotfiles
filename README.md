@@ -288,7 +288,11 @@ chezmoi forget "~/Library/Application Support/nushell/history.txt"
 ~/.config/scans/all-tags.txt (rendered from 1Password template)
 ~/Library/Preferences/com.apple.symbolichotkeys.plist (macOS keyboard shortcuts)
 ~/Library/Preferences/NSUserDictionaryReplacementItems.plist (rendered from 1Password template for macOS text replacements)
+
+and many others I am too lazy to list
 ```
+
+starship.toml: on commit hash 74f7232 a big change was made, brackets from default preset were replaced with spaces, if you want to use brackets you can revert to that commit.
 
 ### Managed directories
 
