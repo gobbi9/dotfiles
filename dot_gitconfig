@@ -23,33 +23,45 @@
 # https://git.wiki.kernel.org/index.php/Aliases
 [alias]
     co = checkout
-    # update local branch from remote without checkout
-    cor = !git fetch origin $@:$@
-    ec = config --global -e
-    up = !git pull --rebase --prune $@ && git submodule update --init --recursive
     cob = checkout -b
-    cm = !git add -A && git commit -m # git reset to unstage
-	c = !git add -A && git commit # for big commit messages
+    ec = config --global -e
+
+    # update local branch(es) from origin without checkout
+    update = "!f() { if [ \"$#\" -eq 0 ]; then set -- \"$(git rev-parse --abbrev-ref HEAD)\"; fi; for branch in \"$@\"; do git fetch origin \"$branch:$branch\" || return $?; done; }; f"
+
+    up = "!f() { git pull --rebase --prune \"$@\" && git submodule update --init --recursive; }; f"
+
+    cm = "!f() { if [ \"$#\" -eq 0 ]; then echo 'usage: git cm <message>' >&2; return 2; fi; git add -A && git commit -m \"$*\"; }; f"
+    cmp = "!f() { if [ \"$#\" -eq 0 ]; then echo 'usage: git cmp <message>' >&2; return 2; fi; git add -A && git commit -m \"$*\" && git push -u origin HEAD; }; f"
+    c = !git add -A && git commit
+
     save = !git add -A && git commit -m 'SAVEPOINT'
-	qs = !sh -c 'git stash push --include-untracked $@ && git stash apply' ${@:2}# quicksave
-	s = stash push --include-untracked
-	sl = stash list
-	sa = !sh -c 'git stash apply stash@{${1:-0}}'
-	ss = !sh -c 'git stash show -p stash@{${1:-0}}' -
-	sp = !sh -c 'git stash pop stash@{${1:-0}}' -
-	spc = !sh -c 'git stash pop stash@{${1:-0}} && git stash clear' -
-	sc = stash clear
-    undo = reset HEAD~1 --mixed
-	fetchto = !sh -c 'git fetch -pPq && git branch -t $2 $1 && git checkout $2' -
-    amend = commit -a --amend
     wipe = !git add -A && git commit -qm 'WIPE SAVEPOINT' && git reset HEAD~1 --hard
-	st = status -bs
+
+    # stash helpers
+    qs = "!f() { git stash push --include-untracked \"$@\" && git stash apply; }; f"
+    s = stash push --include-untracked
+    sl = stash list
+    sa = "!f() { idx=\"${1:-0}\"; git stash apply \"stash@{$idx}\"; }; f"
+    ss = "!f() { idx=\"${1:-0}\"; git stash show -p \"stash@{$idx}\"; }; f"
+    sp = "!f() { idx=\"${1:-0}\"; git stash pop \"stash@{$idx}\"; }; f"
+    spc = "!f() { idx=\"${1:-0}\"; git stash pop \"stash@{$idx}\" && git stash clear; }; f"
+    sc = stash clear
+
+    undo = reset HEAD~1 --mixed
+    amend = commit -a --amend
+
+    fetchto = "!f() { src=\"$1\"; dst=\"$2\"; if [ -z \"$src\" ] || [ -z \"$dst\" ]; then echo 'usage: git fetchto <remote-branch> <local-branch>' >&2; return 2; fi; git fetch -pPq && git branch -t \"$dst\" \"$src\" && git checkout \"$dst\"; }; f"
+
+    st = status -bs
     lg = log --graph --oneline --decorate --all
     lgs = log --graph --oneline --decorate --all --name-status
     l1 = log --oneline
+
     ri = rebase --interactive
-    ri1 = !sh -c 'git rebase --interactive $1^ $1' -
+    ri1 = "!f() { if [ -z \"$1\" ]; then echo 'usage: git ri1 <commit>' >&2; return 2; fi; git rebase --interactive \"$1^\" \"$1\"; }; f"
     rh = reset HEAD^
     rc = rebase --continue
-    cr = !sh -c 'git branch -m $1 $1_ && git cob $1 && git branch -D $1_' - #cleanup rebase
+    cr = "!f() { if [ -z \"$1\" ]; then echo 'usage: git cr <branch>' >&2; return 2; fi; git branch -m \"$1\" \"${1}_\" && git cob \"$1\" && git branch -D \"${1}_\"; }; f"
+
     ap = add -p
