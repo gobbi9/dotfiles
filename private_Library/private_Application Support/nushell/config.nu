@@ -246,3 +246,30 @@ def --wrapped gh [owner?: string@gh-token-owner-completions, ...args] {
 
     gh-with-owner $owner_name ...$args
 }
+
+# cloudflare project overlay
+const CF_REPO = $"($nu.home-dir)/projects/cloudflare"
+const CF_COMMANDS = $"($CF_REPO)/scripts/commands.nu"
+
+# bootstrap once so hide is always parse-valid
+overlay use $CF_COMMANDS as cf_commands
+
+$env.config = ($env.config | upsert hooks.env_change.PWD (
+  ($env.config | get -o hooks.env_change.PWD | default [])
+  | append { |before, after|
+      let cwd = ($after | default "")
+      let in_repo = ($cwd == $CF_REPO) or ($cwd | str starts-with $"($CF_REPO)/")
+
+      if $in_repo {
+        overlay use $CF_COMMANDS as cf_commands
+      } else {
+        overlay hide cf_commands
+      }
+    }
+))
+
+# sync current shell state
+let in_repo_now = (($env.PWD == $CF_REPO) or ($env.PWD | str starts-with $"($CF_REPO)/"))
+if not $in_repo_now {
+  overlay hide cf_commands
+}
