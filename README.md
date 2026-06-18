@@ -384,7 +384,7 @@ Then open Zed once. Zed reads `auto_install_extensions` and installs listed exte
 
 Language/framework preference docs were originally placed under `~/.agents/skills/*-preferences`. That was changed on purpose:
 
-- `skills/` is now reserved for true on-demand capabilities (for example `commit-push`).
+- `skills/` is now reserved for true on-demand capabilities (for example `git-commit-push`).
 - Always-applicable coding guidance now lives in:
 
 ```text

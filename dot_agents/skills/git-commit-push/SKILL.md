@@ -1,5 +1,5 @@
 ---
-name: commit-push
+name: git-commit-push
 description: Generate a commit message from the current diff, let the user edit/verify it in $env.EDITOR, then commit and push the current branch while respecting 1Password biometric auth requirements.
 ---
 
