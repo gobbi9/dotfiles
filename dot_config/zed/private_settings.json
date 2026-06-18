@@ -82,8 +82,8 @@
     "default_model": {
       "effort": "medium",
       "enable_thinking": true,
-      "provider": "openai",
-      "model": "gpt-5.3-codex"
+      "provider": "openai-subscribed",
+      "model": "gpt-5.5"
     },
     "model_parameters": []
   },

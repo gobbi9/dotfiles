@@ -263,8 +263,7 @@ let overlay_exports = {|module_path: string|
 
   let aliases = (
     $src_lines
-    | parse -r '^\s*export\s+alias\s+(?<name>[A-Za-z0-9_-]+)\s*='
-    | get name
+    | parse -r '^\s*export\s+alias\s+(?<name>[A-Za-z0-9_-]+)\s*=\s*(?<target>.+?)\s*$'
   )
 
   let externs = (
@@ -293,6 +292,7 @@ let format_inline_list = {|items: list<string>|
 
 # parse-time bootstrap for overlay names used in `overlay hide`
 overlay use ~/projects/cloudflare/scripts/commands.nu as cf_commands
+overlay use ~/projects/opensockets/mcpd/overlay.nu as mcpd_commands
 
 # project overlays (add more entries here as needed)
 let project_overlays = [
@@ -301,6 +301,12 @@ let project_overlays = [
     module_path: $"($nu.home-dir)/projects/cloudflare/scripts/commands.nu"
     enable: {|| overlay use ~/projects/cloudflare/scripts/commands.nu as cf_commands }
     disable: {|| overlay hide "cf_commands" }
+  }
+  {
+    repo: $"($nu.home-dir)/projects/opensockets/mcpd"
+    module_path: $"($nu.home-dir)/projects/opensockets/mcpd/overlay.nu"
+    enable: {|| overlay use ~/projects/opensockets/mcpd/overlay.nu as mcpd_commands }
+    disable: {|| overlay hide "mcpd_commands" }
   }
 ]
 
@@ -353,17 +359,22 @@ def "?" [
 
   print $"Overlay commands for this repo, from ($module_path_display)"
   print ""
-  print "commands:"
-
   if ($exports.exported.commands | is-empty) {
-    print "  []"
+    print "commands: []"
   } else {
+    print "commands:"
+
     for command_name in $exports.exported.commands {
       print $"  - ($command_name)"
     }
   }
 
-  print $"aliases: (do $format_inline_list $exports.exported.aliases)"
+  print $"aliases:"
+
+  for alias_def in $exports.exported.aliases {
+    print $"  - ($alias_def.name): ($alias_def.target)"
+  }
+
   print $"externs: (do $format_inline_list $exports.exported.externs)"
   print ""
   print "Type help <command> for more info."
