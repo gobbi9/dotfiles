@@ -247,29 +247,144 @@ def --wrapped gh [owner?: string@gh-token-owner-completions, ...args] {
     gh-with-owner $owner_name ...$args
 }
 
-# cloudflare project overlay
-const CF_REPO = $"($nu.home-dir)/projects/cloudflare"
-const CF_COMMANDS = $"($CF_REPO)/scripts/commands.nu"
+# Custom overlay management
+let overlay_exports = {|module_path: string|
+  if not ($module_path | path exists) {
+    error make --unspanned { msg: $"Overlay module not found: ($module_path)" }
+  }
 
-# bootstrap once so hide is always parse-valid
-overlay use $CF_COMMANDS as cf_commands
+  let src_lines = (^cat $module_path | lines)
+
+  let commands = (
+    $src_lines
+    | parse -r '^\s*export\s+def(?:\s+--wrapped)?\s+(?<name>[A-Za-z0-9_-]+)'
+    | get name
+  )
+
+  let aliases = (
+    $src_lines
+    | parse -r '^\s*export\s+alias\s+(?<name>[A-Za-z0-9_-]+)\s*='
+    | get name
+  )
+
+  let externs = (
+    $src_lines
+    | parse -r '^\s*export\s+extern\s+(?<name>[A-Za-z0-9_-]+)'
+    | get name
+  )
+
+  {
+    module_path: $module_path
+    exported: {
+      commands: $commands
+      aliases: $aliases
+      externs: $externs
+    }
+  }
+}
+
+let format_inline_list = {|items: list<string>|
+  if ($items | is-empty) {
+    "[]"
+  } else {
+    $"[($items | str join ', ')]"
+  }
+}
+
+# parse-time bootstrap for overlay names used in `overlay hide`
+overlay use ~/projects/cloudflare/scripts/commands.nu as cf_commands
+
+# project overlays (add more entries here as needed)
+let project_overlays = [
+  {
+    repo: $"($nu.home-dir)/projects/cloudflare"
+    module_path: $"($nu.home-dir)/projects/cloudflare/scripts/commands.nu"
+    enable: {|| overlay use ~/projects/cloudflare/scripts/commands.nu as cf_commands }
+    disable: {|| overlay hide "cf_commands" }
+  }
+]
+
+let in_overlay_repo = {|cwd: string, repo: string|
+  ($cwd == $repo) or ($cwd | str starts-with $"($repo)/")
+}
+
+let current_project_overlay = {|cwd: string|
+  $project_overlays
+  | where {|overlay_def| do $in_overlay_repo $cwd $overlay_def.repo }
+  | first
+}
+
+def "?" [
+  cwd?: string # Optional directory to inspect. Defaults to the current $env.PWD.
+  --module-path(-m): string # Inspect this overlay module file directly instead of resolving from project_overlays.
+] {
+  let effective_cwd = if $cwd == null { ($env.PWD | default "") } else { $cwd }
+
+  let resolved = if $module_path == null {
+    let overlay_def = (do $current_project_overlay $effective_cwd)
+
+    if $overlay_def == null {
+      error make --unspanned { msg: "No project overlay configured for current directory." }
+    }
+
+    {
+      repo: ($overlay_def | get repo)
+      module_path: ($overlay_def | get module_path)
+    }
+  } else {
+    {
+      repo: $effective_cwd
+      module_path: $module_path
+    }
+  }
+
+  let repo = ($resolved | get repo)
+  let resolved_module_path = ($resolved | get module_path)
+
+  let module_path_display = if ($resolved_module_path | str starts-with $"($effective_cwd)/") {
+    $"./($resolved_module_path | path relative-to $effective_cwd)"
+  } else if ($resolved_module_path | str starts-with $"($repo)/") {
+    $"./($resolved_module_path | path relative-to $repo)"
+  } else {
+    $resolved_module_path
+  }
+
+  let exports = (do $overlay_exports $resolved_module_path)
+
+  print $"Overlay commands for this repo, from ($module_path_display)"
+  print ""
+  print "commands:"
+
+  if ($exports.exported.commands | is-empty) {
+    print "  []"
+  } else {
+    for command_name in $exports.exported.commands {
+      print $"  - ($command_name)"
+    }
+  }
+
+  print $"aliases: (do $format_inline_list $exports.exported.aliases)"
+  print $"externs: (do $format_inline_list $exports.exported.externs)"
+  print ""
+  print "Type help <command> for more info."
+}
+
+let sync_project_overlays = {|cwd: string|
+  for overlay_def in $project_overlays {
+    if (do $in_overlay_repo $cwd $overlay_def.repo) {
+      do $overlay_def.enable
+    } else {
+      do $overlay_def.disable
+    }
+  }
+}
 
 $env.config = ($env.config | upsert hooks.env_change.PWD (
   ($env.config | get -o hooks.env_change.PWD | default [])
   | append { |before, after|
-      let cwd = ($after | default "")
-      let in_repo = ($cwd == $CF_REPO) or ($cwd | str starts-with $"($CF_REPO)/")
-
-      if $in_repo {
-        overlay use $CF_COMMANDS as cf_commands
-      } else {
-        overlay hide cf_commands
-      }
+      do $sync_project_overlays ($after | default "")
     }
 ))
 
 # sync current shell state
-let in_repo_now = (($env.PWD == $CF_REPO) or ($env.PWD | str starts-with $"($CF_REPO)/"))
-if not $in_repo_now {
-  overlay hide cf_commands
-}
+do $sync_project_overlays ($env.PWD | default "")

@@ -65,8 +65,33 @@ alias open = ^open
 
 - Subdivide Nushell scripts into small, reusable functions/components.
 - Keep each Nushell function to a maximum of 50 lines.
+- Avoid defining public `def`s for internal helpers.
+  - For internal helper logic, prefer private helpers (for example `def "--my-helper" [...] { ... }`) **or** local closures via `let` (for example `let my_helper = {|...| ... }`) when that is cleaner.
+  - Only add public `def`s when the command is intentionally user-facing.
 - Always create custom Nushell error messages with `--unspanned` (for example: `error make --unspanned { msg: "..." }`).
 - Validate nushell scripts for deprecation warnings, and fix any deprecated commands.
+
+## Nushell overlays (`config.nu`)
+
+When updating `~/.local/share/chezmoi/private_Library/private_Application Support/nushell/config.nu` overlays:
+
+- Keep overlays data-driven through `project_overlays`.
+- Add new overlays by appending one record with:
+    - `repo`: absolute repo path (prefer `$nu.home-dir` interpolation).
+    - `enable`: closure with `overlay use <commands.nu> as <overlay_name>`.
+    - `disable`: closure with `overlay hide "<overlay_name>"`.
+- Do not duplicate path-toggle logic in hooks; keep it centralized in `sync-project-overlays`.
+- Maintain parse-time validity for `overlay hide` by ensuring each hidden overlay name is bootstrapped once with `overlay use ... as <name>` before hide usage.
+- **Manual maintenance required:** keep the bootstrap `overlay use ... as <name>` lines at the beginning of the overlay block in sync with `project_overlays` (add/remove/rename together).
+- After edits, validate by sourcing config with Nushell:
+
+```shell
+cat <<'NU' | /opt/homebrew/bin/nu -n /dev/stdin
+source '/Users/gobbi/Library/Application Support/nushell/config.nu'
+source '/Users/gobbi/.local/share/chezmoi/private_Library/private_Application Support/nushell/config.nu'
+print 'config loaded'
+NU
+```
 
 ## Preferred tools
 

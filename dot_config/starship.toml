@@ -97,6 +97,7 @@ $crystal\
 ${custom.mise_python}\
 ${custom.kotlin_gradle}\
 $mise\
+${custom.overlay_commands_indicator}\
 $line_break\
 $sudo\
 $jobs\
@@ -331,8 +332,72 @@ symbol = "󰔷 "
 disabled = false
 format = '[$symbol$health]($style) '
 symbol = "󰬔 "
-healthy_symbol = "󰋑 "
-unhealthy_symbol = "󰋔 "
+healthy_symbol = "󰋑̇"
+unhealthy_symbol = "󰋔"
+
+[custom.overlay_commands_indicator]
+description = "Show overlay commands indicator when ? succeeds"
+when = '''
+try {
+  ? | ignore
+  exit 0
+} catch {
+  exit 1
+}
+'''
+command = '''
+let cwd = ($env.PWD | default "")
+let overlay_def = (do $current_project_overlay $cwd)
+
+let exports = if $overlay_def == null {
+  {
+    exported: {
+      commands: []
+      aliases: []
+      externs: []
+    }
+  }
+} else {
+  do $overlay_exports ($overlay_def | get module_path)
+}
+
+let total = (
+  ($exports.exported.commands | default [] | length)
+  + ($exports.exported.aliases | default [] | length)
+  + ($exports.exported.externs | default [] | length)
+)
+
+if $total == 0 {
+  ""
+  exit 0
+}
+
+let subs = {
+  "0": "₀"
+  "1": "₁"
+  "2": "₂"
+  "3": "₃"
+  "4": "₄"
+  "5": "₅"
+  "6": "₆"
+  "7": "₇"
+  "8": "₈"
+  "9": "₉"
+}
+
+let subscript_count = (
+  $total
+  | into string
+  | split chars
+  | each {|d| $subs | get $d }
+  | str join ""
+)
+
+$"($subscript_count)"
+'''
+format = '[$output]($style) '
+style = "bright-blue"
+shell = ["/opt/homebrew/bin/nu", "-l", "-c"]
 
 [mojo]
 format = '[$symbol($version)]($style) '
