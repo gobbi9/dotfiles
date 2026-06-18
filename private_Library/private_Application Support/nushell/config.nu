@@ -320,7 +320,7 @@ let current_project_overlay = {|cwd: string|
   | first
 }
 
-def "?" [
+def "i" [
   cwd?: string # Optional directory to inspect. Defaults to the current $env.PWD.
   --module-path(-m): string # Inspect this overlay module file directly instead of resolving from project_overlays.
 ] {

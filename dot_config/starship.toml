@@ -339,7 +339,7 @@ unhealthy_symbol = "󰋔"
 description = "Show overlay commands indicator when ? succeeds"
 when = '''
 try {
-  ? | ignore
+  i | ignore
   exit 0
 } catch {
   exit 1
@@ -348,6 +348,7 @@ try {
 command = '''
 let cwd = ($env.PWD | default "")
 let overlay_def = (do $current_project_overlay $cwd)
+let icon = ""
 
 let exports = if $overlay_def == null {
   {
@@ -366,11 +367,6 @@ let total = (
   + ($exports.exported.aliases | default [] | length)
   + ($exports.exported.externs | default [] | length)
 )
-
-if $total == 0 {
-  ""
-  exit 0
-}
 
 let subs = {
   "0": "₀"
@@ -393,7 +389,7 @@ let subscript_count = (
   | str join ""
 )
 
-$"($subscript_count)"
+$"($subscript_count)($icon)"
 '''
 format = '[$output]($style) '
 style = "bright-blue"
