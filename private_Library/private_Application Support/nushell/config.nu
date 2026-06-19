@@ -360,7 +360,7 @@ def "i" [
   print $"(ansi cyan)Overlay commands for this repo, from(ansi reset) (ansi green_bold)($module_path_display)(ansi reset)"
   print ""
   if ($exports.exported.commands | is-empty) {
-    print $"(ansi yellow)commands:(ansi reset) []"
+    print $"(ansi yellow)commands:(ansi reset) (ansi green)[](ansi reset)"
   } else {
     print $"(ansi yellow)commands:(ansi reset)"
 
@@ -369,10 +369,14 @@ def "i" [
     }
   }
 
-  print $"(ansi yellow)aliases:(ansi reset)"
+  if ($exports.exported.aliases | is-empty) {
+    print $"(ansi yellow)aliases:(ansi reset) (ansi green)[](ansi reset)"
+  } else {
+    print $"(ansi yellow)aliases:(ansi reset)"
 
-  for alias_def in $exports.exported.aliases {
-    print $"  (ansi cyan)($alias_def.name)(ansi reset): (ansi green)($alias_def.target)(ansi reset)"
+    for alias_def in $exports.exported.aliases {
+      print $"  (ansi cyan)($alias_def.name)(ansi reset): (ansi green)($alias_def.target)(ansi reset)"
+    }
   }
 
   print $"(ansi yellow)externs:(ansi reset) (ansi green)(do $format_inline_list $exports.exported.externs)(ansi reset)"
