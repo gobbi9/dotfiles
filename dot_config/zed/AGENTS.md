@@ -99,6 +99,8 @@ NU
 - Use `brew` as the package manager.
 - Use `mise` as the environment/runtime manager.
 - Use `mise` for language runtime version management (JDK, npm/node, Python, Go, etc.).
+- `mise` must not call `brew install`.
+- If a package is only available on Homebrew, do not add it to `mise.toml`; install/manage it via `brew` instead.
 - Use `brew` for non-runtime tooling.
 - When running project tools that may be provided by `mise`, execute them from the project directory through `mise exec -- <tool> <args>` instead of assuming they are available on the agent's default `PATH`.
   - Examples: `mise exec -- cargo test`, `mise exec -- npm test`, `mise exec -- go test ./...`, `mise exec -- java -version`.
