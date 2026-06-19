@@ -332,7 +332,7 @@ symbol = "󰔷 "
 disabled = false
 format = '[$symbol$health]($style) '
 symbol = "󰬔 "
-healthy_symbol = "󰋑̇"
+healthy_symbol = "󰋑"
 unhealthy_symbol = "󰋔"
 
 [custom.overlay_commands_indicator]

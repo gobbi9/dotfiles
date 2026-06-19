@@ -357,27 +357,27 @@ def "i" [
 
   let exports = (do $overlay_exports $resolved_module_path)
 
-  print $"Overlay commands for this repo, from ($module_path_display)"
+  print $"(ansi cyan)Overlay commands for this repo, from(ansi reset) (ansi green_bold)($module_path_display)(ansi reset)"
   print ""
   if ($exports.exported.commands | is-empty) {
-    print "commands: []"
+    print $"(ansi yellow)commands:(ansi reset) []"
   } else {
-    print "commands:"
+    print $"(ansi yellow)commands:(ansi reset)"
 
     for command_name in $exports.exported.commands {
-      print $"  - ($command_name)"
+      print $"  (ansi green)($command_name)(ansi reset)"
     }
   }
 
-  print $"aliases:"
+  print $"(ansi yellow)aliases:(ansi reset)"
 
   for alias_def in $exports.exported.aliases {
-    print $"  - ($alias_def.name): ($alias_def.target)"
+    print $"  (ansi cyan)($alias_def.name)(ansi reset): (ansi green)($alias_def.target)(ansi reset)"
   }
 
-  print $"externs: (do $format_inline_list $exports.exported.externs)"
+  print $"(ansi yellow)externs:(ansi reset) (ansi green)(do $format_inline_list $exports.exported.externs)(ansi reset)"
   print ""
-  print "Type help <command> for more info."
+  print $"(ansi steelblue1a)  Type help <command | alias | extern> for more info.(ansi reset)"
 }
 
 let sync_project_overlays = {|cwd: string|
