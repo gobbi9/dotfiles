@@ -31,6 +31,7 @@ Precedence:
 - `nushell` autoload scripts should be placed in `~/Library/Application Support/nushell/vendor/autoload`.
 - Provide shell snippets in optimized Nushell unless the user asks otherwise.
 - Prefer Nushell scripts over Python scripts for intermediate steps. Do not use Python scripts for intermediate steps unless the user asks otherwise.
+- For committed or executable Nushell scripts, prefer portable `#!/usr/bin/env nu` shebangs over package-manager-specific absolute paths like `#!/opt/homebrew/bin/nu`.
 - Execute Nushell commands by explicitly loading config from `'/Users/gobbi/Library/Application Support/nushell/config.nu'`.
 - Write readable, line-separated scripts for **intermediate operations**, by using heredoc piping for multi-line commands:
   ```shell
