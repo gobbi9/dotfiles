@@ -18,16 +18,16 @@ The primary target file is:
 1. A parse-time bootstrap line for every overlay name used by `overlay hide`:
 
     ```nu
-    overlay use ~/projects/cloudflare/scripts/commands.nu as cf_commands
+    overlay use ~/projects/emails/scripts/commands.nu as cf_commands
     ```
 
 2. One matching record in `project_overlays`:
 
     ```nu
     {
-      repo: $"($nu.home-dir)/projects/cloudflare"
-      module_path: $"($nu.home-dir)/projects/cloudflare/scripts/commands.nu"
-      enable: {|| overlay use ~/projects/cloudflare/scripts/commands.nu as cf_commands }
+      repo: $"($nu.home-dir)/projects/emails"
+      module_path: $"($nu.home-dir)/projects/emails/scripts/commands.nu"
+      enable: {|| overlay use ~/projects/emails/scripts/commands.nu as cf_commands }
       disable: {|| overlay hide "cf_commands" }
     }
     ```

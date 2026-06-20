@@ -257,8 +257,9 @@ let overlay_exports = {|module_path: string|
 
   let commands = (
     $src_lines
-    | parse -r '^\s*export\s+def(?:\s+--wrapped)?\s+(?<name>[A-Za-z0-9_-]+)'
+    | parse -r '^\s*export\s+def(?:\s+--[A-Za-z0-9_-]+)*\s+(?<name>"[^"]+"|[A-Za-z0-9_-]+)'
     | get name
+    | each {|name| $name | str replace -a '"' '' }
   )
 
   let aliases = (
@@ -268,8 +269,9 @@ let overlay_exports = {|module_path: string|
 
   let externs = (
     $src_lines
-    | parse -r '^\s*export\s+extern\s+(?<name>[A-Za-z0-9_-]+)'
+    | parse -r '^\s*export\s+extern\s+(?<name>"[^"]+"|[A-Za-z0-9_-]+)'
     | get name
+    | each {|name| $name | str replace -a '"' '' }
   )
 
   {
@@ -291,15 +293,15 @@ let format_inline_list = {|items: list<string>|
 }
 
 # parse-time bootstrap for overlay names used in `overlay hide`
-overlay use ~/projects/cloudflare/scripts/commands.nu as cf_commands
+overlay use ~/projects/emails/scripts/commands.nu as cf_commands
 overlay use ~/projects/opensockets/mcpd/overlay.nu as mcpd_commands
 
 # project overlays (add more entries here as needed)
 let project_overlays = [
   {
-    repo: $"($nu.home-dir)/projects/cloudflare"
-    module_path: $"($nu.home-dir)/projects/cloudflare/scripts/commands.nu"
-    enable: {|| overlay use ~/projects/cloudflare/scripts/commands.nu as cf_commands }
+    repo: $"($nu.home-dir)/projects/emails"
+    module_path: $"($nu.home-dir)/projects/emails/scripts/commands.nu"
+    enable: {|| overlay use ~/projects/emails/scripts/commands.nu as cf_commands }
     disable: {|| overlay hide "cf_commands" }
   }
   {
