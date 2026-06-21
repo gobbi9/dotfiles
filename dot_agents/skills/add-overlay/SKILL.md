@@ -1,176 +1,129 @@
 ---
 name: add-overlay
-description: Add or update a project Nushell overlay in chezmoi-managed user/overlays.nu (sourced by config.nu), including overlay bootstrap, project_overlays entries, optional aliases, and optional script-to-binary wrappers with mise path guidance.
+description: Add or update a project Nushell overlay using a manual workflow in chezmoi-managed user/overlays.nu, with optional starship overlay-count indicator and optional script-to-binary wrappers with mise path guidance.
 ---
 
 # Add Project Overlay
 
-Use this skill when the user wants to add a repository-specific Nushell overlay to the chezmoi-managed Nushell config, or when they want to expose repo scripts as convenient commands, aliases, or binary-style shortcuts.
+Use this skill when the user wants to add or update a repository-specific Nushell overlay in the current manual model, or expose repo scripts as convenient commands/aliases/binary-style shortcuts.
 
-The primary target files are:
+## Current model (important)
 
-- `chezmoi/private_Library/private_Application Support/nushell/user/overlays.nu`
-- `chezmoi/private_Library/private_Application Support/nushell/config.nu` (only to ensure `source user/overlays.nu` exists)
+This setup is **manual activation**, not automatic synchronization:
 
-## Expected overlay model
-
-`user/overlays.nu` keeps project overlays data-driven:
-
-1. A parse-time bootstrap line for every overlay name used by `overlay hide`:
-
-    ```nu
-    overlay use ~/projects/emails/scripts/commands.nu as cf_commands
-    ```
-
-2. One matching record in `project_overlays`:
-
-    ```nu
-    {
-      repo: $"($nu.home-dir)/projects/emails"
-      module_path: $"($nu.home-dir)/projects/emails/scripts/commands.nu"
-      enable: {|| overlay use ~/projects/emails/scripts/commands.nu as cf_commands }
-      disable: {|| overlay hide "cf_commands" }
-    }
-    ```
-
-Keep these two locations in sync. The overlay name in `overlay use ... as <name>` must exactly match the string passed to `overlay hide "<name>"`.
+- Overlay helper/introspection logic lives in:
+    - `chezmoi/private_Library/private_Application Support/nushell/user/overlays.nu`
+- It is sourced from:
+    - `chezmoi/private_Library/private_Application Support/nushell/config.nu`
+      via `source user/overlays.nu`
+- Activation is done by user command/alias (for example `o`), not by PWD hooks.
+- There is no `project_overlays` registry and no `sync_project_overlays` hook logic.
 
 ## Procedure
 
-1. Gather the required values from the user or the repository:
+1. Gather required values:
 
-    - Repository path, preferably under `$nu.home-dir`, e.g. `$"($nu.home-dir)/projects/my-repo"`.
-    - Overlay module path, usually `<repo>/scripts/commands.nu`.
-    - Overlay name, usually a short repo-specific name ending in `_commands`, e.g. `cf_commands`.
+    - Repository path (prefer under `$nu.home-dir`).
+    - Overlay module path (default is usually repo-local `overlay.nu`; sometimes `scripts/commands.nu`).
+    - Whether user wants:
+        - aliases only,
+        - exported defs/externs,
+        - wrappers in `.local/bin`.
 
-2. Inspect the target repo layout before editing:
+2. Inspect repo state before editing:
 
-    - Check whether `scripts/commands.nu` already exists.
-    - Check whether `.local/bin` and `mise.toml` exist if the user wants binary wrappers or command shortcuts for scripts.
-    - Do not create wrappers or aliases unless the user asked for them or they are clearly part of the requested overlay setup.
+    - Check overlay file exists (for example `overlay.nu` or `scripts/commands.nu`).
+    - Check `.local/bin` and `mise.toml` only if wrappers/shortcuts are requested.
+    - Do not create wrappers or unrelated aliases unless requested.
 
-3. Update `user/overlays.nu`:
+3. Update `user/overlays.nu` for introspection UX (`i`) as needed:
 
-    - Add one parse-time bootstrap line in the `# parse-time bootstrap for overlay names used in \`overlay hide\`` block:
+    - Keep helpers small and readable.
+    - Keep custom errors as `error make --unspanned { msg: "..." }`.
+    - Prefer parsing from file content for export listing when needed.
 
-        ```nu
-        overlay use ~/projects/my-repo/scripts/commands.nu as my_repo_commands
-        ```
+4. Ensure import wiring exists in `config.nu`:
 
-    - Add one record to `project_overlays`:
-
-        ```nu
-        {
-          repo: $"($nu.home-dir)/projects/my-repo"
-          module_path: $"($nu.home-dir)/projects/my-repo/scripts/commands.nu"
-          enable: {|| overlay use ~/projects/my-repo/scripts/commands.nu as my_repo_commands }
-          disable: {|| overlay hide "my_repo_commands" }
-        }
-        ```
-
-    - Keep the existing data-driven `sync_project_overlays` logic unchanged.
-    - Do not duplicate path-toggle logic in hooks.
-
-4. Ensure `config.nu` imports overlays:
-
-    - Confirm this line exists in `chezmoi/private_Library/private_Application Support/nushell/config.nu`:
+    - Confirm:
 
         ```nu
         source user/overlays.nu
         ```
 
-    - If it is missing, add it under the external custom user config `source` block.
+    - Add it under the external user config section only if missing.
 
-5. If creating a new overlay module, prefer `scripts/commands.nu` with exported commands and aliases:
+5. If creating/updating overlay module content, prefer top-level exports:
 
-    ```nu
-    # Repo-local Nushell command overlay for discoverable help.
-    # Load with:
-    #   overlay use ./scripts/commands.nu
+    - For this setup, prefer top-level `export alias` / `export def` / `export extern` declarations.
+    - Example:
 
-    def repo-root [] {
-      let result = (^git rev-parse --show-toplevel | complete)
+        ```nu
+        export alias mcpc = cargo run -q -p mcpc
+        export alias mcpd = cargo run -q -p mcpd
+        export alias quizz = cargo run -q -p quizz
+        ```
 
-      if $result.exit_code != 0 {
-        error make --unspanned {
-          msg: $"Could not determine repository root from current directory '($env.PWD)'. Ensure you are inside this repository."
-        }
-      }
+6. If user asks for alias-only overlays:
 
-      $result.stdout | str trim
-    }
+    - Add `export alias <short> = <command>` entries only.
+    - Do not require `mise.toml` or `.local/bin` for alias-only overlays.
 
-    export def --wrapped example [...args: string] {
-      let command = ((repo-root) | path join ".local" "bin" "example")
-      run-external $command ...$args
-    }
+7. If user asks for binary wrappers/shortcuts:
 
-    export alias ex = example
-    ```
-
-6. If the user asks only for aliases:
-
-    - Add `export alias <short> = <command>` entries to the overlay module.
-    - Do not require `mise.toml` or `.local/bin` just for aliases.
-    - Validate that the aliased command is available in the overlay context or explain any external requirement.
-
-7. If the user asks to convert scripts to binaries, binary wrappers, or shortcuts:
-
-    - Prefer repo-local executable wrappers in `.local/bin/<name>`.
-    - Suggest adding or updating `mise.toml` so `.local/bin` is on PATH when the repo is active:
+    - Prefer `.local/bin/<name>` wrappers.
+    - Suggest/update `mise.toml` PATH:
 
         ```toml
         [env]
         _.path = ["./.local/bin"]
         ```
 
-    - If tools are required by wrappers, add them under `[tools]` only when justified, e.g.:
-
-        ```toml
-        [tools]
-        terraform = "1.9.8"
-        aws = "latest"
-
-        [env]
-        _.path = ["./.local/bin"]
-        ```
-
-    - Do not require or introduce `mise.toml` for alias-only overlays.
-    - For Nushell wrapper scripts, use a direct shebang and forward arguments:
+    - Add `[tools]` entries only when justified.
+    - For Nushell scripts, use portable shebang:
 
         ```nu
         #!/usr/bin/env nu
-
-        def repo-root [] {
-          let result = (^git rev-parse --show-toplevel | complete)
-
-          if $result.exit_code != 0 {
-            error make --unspanned {
-              msg: $"Could not determine repository root from current directory '($env.PWD)'. Ensure you are inside this repository."
-            }
-          }
-
-          $result.stdout | str trim
-        }
-
-        def --wrapped main [...args: string] {
-          let command = ((repo-root) | path join "scripts" "example.nu")
-          run-external $command ...$args
-        }
         ```
 
     - Make wrapper files executable.
 
-8. Follow Nushell conventions:
+8. If starship overlay count indicator is enabled:
 
-    - Use `$nu.home-dir` for home-relative paths in scripts and config records where possible.
-    - Use `error make --unspanned` for custom errors.
-    - Use `openn` instead of `open` when reading/parsing files in Nushell snippets.
-    - Keep helper functions small and private unless they are intentionally exported.
+    - Keep it file-based and lightweight (parse `overlay.nu` exports and render count).
+    - Do not rely on shell overlay active-state detection from starship custom modules.
+
+## Pitfalls, problems, and compromises
+
+1. Nushell overlay scope behavior:
+
+    - `overlay use/hide` executed inside closures/hooks (`do { ... }`) can fail to persist overlay state in the parent interactive scope.
+    - This breaks naive auto-sync-on-PWD-change approaches.
+
+2. Parse-time constraints on `overlay use`:
+
+    - `overlay use` arguments are parse-time sensitive; dynamic variables/paths can fail.
+    - Relative module paths can fail in non-interactive contexts before expected `cd` logic applies.
+
+3. Starship process boundary:
+
+    - Starship custom modules run in separate `nu -c` processes.
+    - They cannot reliably inspect/reflect the live overlay stack of the interactive shell.
+    - Therefore, “overlay active/inactive” indicators in starship are misleading and should be avoided.
+
+4. Practical compromise in this setup:
+
+    - Use manual activation (`o`) for correctness.
+    - Use `i` for explicit introspection/warnings in the interactive shell.
+    - If starship is used, show only static/file-derived signal (for example exported count like `₃`), not runtime active-state.
+
+5. Top-level exports preference:
+
+    - Nested `module ... { export ... }` in `overlay.nu` can make activation semantics less obvious for this workflow.
+    - Prefer top-level exports for predictable activation and introspection.
 
 ## Validation
 
-After edits, validate the startup config load (which includes `source user/overlays.nu`) by sourcing the active config and the chezmoi source config:
+After edits, validate startup load:
 
 ```shell
 cat <<'NU' | /opt/homebrew/bin/nu -n /dev/stdin
@@ -180,8 +133,15 @@ print 'config loaded'
 NU
 ```
 
-For changed overlay modules or wrapper scripts, run the smallest focused validation available, such as:
+If starship overlay count module is changed, validate directly:
 
+```shell
+STARSHIP_CONFIG='/Users/gobbi/.local/share/chezmoi/dot_config/starship.toml' \
+starship module custom.overlay_commands_indicator --path '/Users/gobbi/projects/opensockets/mcpd'
+```
+
+For changed repo overlay modules/wrappers, run focused checks (non-destructive):
+
+- `mise exec -- nu --check overlay.nu`
 - `mise exec -- nu --check scripts/commands.nu`
-- `mise exec -- nu --check scripts/<script>.nu`
-- A direct command smoke test from inside the target repo, if it does not require secrets or destructive actions.
+- Small smoke test inside target repo (only if safe and does not require secrets)

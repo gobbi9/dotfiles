@@ -336,61 +336,9 @@ healthy_symbol = "󰋑"
 unhealthy_symbol = "󰋔"
 
 [custom.overlay_commands_indicator]
-description = "Show overlay commands indicator when ? succeeds"
-when = '''
-try {
-  i | ignore
-  exit 0
-} catch {
-  exit 1
-}
-'''
-command = '''
-let cwd = ($env.PWD | default "")
-let overlay_def = (do $current_project_overlay $cwd)
-let icon = ""
-
-let exports = if $overlay_def == null {
-  {
-    exported: {
-      commands: []
-      aliases: []
-      externs: []
-    }
-  }
-} else {
-  do $overlay_exports ($overlay_def | get module_path)
-}
-
-let total = (
-  ($exports.exported.commands | default [] | length)
-  + ($exports.exported.aliases | default [] | length)
-  + ($exports.exported.externs | default [] | length)
-)
-
-let subs = {
-  "0": "₀"
-  "1": "₁"
-  "2": "₂"
-  "3": "₃"
-  "4": "₄"
-  "5": "₅"
-  "6": "₆"
-  "7": "₇"
-  "8": "₈"
-  "9": "₉"
-}
-
-let subscript_count = (
-  $total
-  | into string
-  | split chars
-  | each {|d| $subs | get $d }
-  | str join ""
-)
-
-$"($subscript_count)($icon)"
-'''
+description = "Show overlay commands count indicator when overlay.nu exports are present"
+when = '([($env.PWD | default ".") "overlay.nu"] | path join | path exists)'
+command = 'source ($nu.home-dir | path join ".config" "starship" "overlay_commands_indicator.nu"); overlay-commands-indicator-command'
 format = '[$output]($style) '
 style = "bright-blue"
 shell = ["/opt/homebrew/bin/nu", "-l", "-c"]
@@ -505,83 +453,8 @@ style = "bold white"
 
 [custom.rust_workspace_packages]
 description = "Show all Rust workspace packages with versions"
-when = '''
-if ((which cargo | length) > 0) {
-  let cargo_locate = (^cargo locate-project --workspace --message-format plain | complete)
-  if $cargo_locate.exit_code == 0 {
-    exit 0
-  }
-}
-
-if ((which mise | length) > 0) {
-  let mise_locate = (^mise exec -- cargo locate-project --workspace --message-format plain | complete)
-  if $mise_locate.exit_code == 0 {
-    exit 0
-  }
-}
-
-exit 1
-'''
-command = '''
-let cargo_result = if ((which cargo | length) > 0) {
-  (^cargo metadata --no-deps --format-version 1 | complete)
-} else {
-  { exit_code: 1, stdout: "", stderr: "" }
-}
-
-let metadata_json = if $cargo_result.exit_code == 0 {
-  $cargo_result.stdout
-} else {
-  if ((which mise | length) == 0) { exit 1 }
-  let mise_result = (^mise exec -- cargo metadata --no-deps --format-version 1 | complete)
-  if $mise_result.exit_code != 0 { exit 1 }
-  $mise_result.stdout
-}
-
-let metadata = (try { $metadata_json | from json } catch { null })
-if $metadata == null { exit 1 }
-
-let members = ($metadata.workspace_members | default [])
-if (($members | length) == 0) { exit 1 }
-
-let packages = (
-  $members
-  | each {|id|
-      $metadata.packages
-      | where id == $id
-      | first
-    }
-  | sort-by name
-)
-
-if (($packages | length) == 0) { exit 1 }
-
-let groups = (
-  $packages
-  | reduce --fold [] {|pkg, acc|
-      if (($acc | length) == 0) {
-        [{ version: $pkg.version, names: [$pkg.name] }]
-      } else {
-        let last = ($acc | last)
-        if $last.version == $pkg.version {
-          let n = ($acc | length)
-          let head = if $n > 1 { $acc | first ($n - 1) } else { [] }
-          $head | append { version: $last.version, names: ($last.names | append $pkg.name) }
-        } else {
-          $acc | append { version: $pkg.version, names: [$pkg.name] }
-        }
-      }
-    }
-)
-
-let rendered = (
-  $groups
-  | each {|g| $"󰏗 ($g.names | str join ' ') v($g.version)" }
-  | str join " "
-)
-
-$"($rendered)"
-'''
+when = 'source ($nu.home-dir | path join ".config" "starship" "rust_workspace_packages.nu"); rust-workspace-packages-when'
+command = 'source ($nu.home-dir | path join ".config" "starship" "rust_workspace_packages.nu"); rust-workspace-packages-command'
 format = "[$output]($style) "
 style = "bold white"
 ignore_timeout = true
@@ -619,108 +492,8 @@ symbol = " "
 
 [custom.gradle_root_project]
 description = "Show Gradle root project name and version"
-when = '''
-let root_result = (^git rev-parse --show-toplevel | complete)
-let root = if $root_result.exit_code == 0 {
-  $root_result.stdout | str trim
-} else {
-  pwd
-}
-
-let has_gradle_signals = [
-  "settings.gradle.kts",
-  "settings.gradle",
-  "build.gradle.kts",
-  "build.gradle",
-  "gradle.properties"
-] | any {|f| ([$root $f] | path join | path exists) }
-
-if $has_gradle_signals {
-  exit 0
-}
-
-exit 1
-'''
-command = '''
-def parse-quoted [line: string] {
-  let with_double_quotes = ($line | parse -r '.*"(?<value>[^"]+)".*')
-  if (($with_double_quotes | length) > 0) {
-    return ($with_double_quotes | get 0.value)
-  }
-
-  let with_single_quotes = ($line | parse -r ".*'(?<value>[^']+)'.*")
-  if (($with_single_quotes | length) > 0) {
-    return ($with_single_quotes | get 0.value)
-  }
-
-  ""
-}
-
-let root_result = (^git rev-parse --show-toplevel | complete)
-let root = if $root_result.exit_code == 0 {
-  $root_result.stdout | str trim
-} else {
-  pwd
-}
-
-mut name = ""
-for f in ["settings.gradle.kts", "settings.gradle"] {
-  let path = ([$root $f] | path join)
-  if not ($path | path exists) {
-    continue
-  }
-
-  let lines = (openn $path | lines)
-  let name_lines = ($lines | where {|line| $line =~ '^\s*rootProject\.name\s*='})
-  if (($name_lines | length) > 0) {
-    $name = (parse-quoted ($name_lines | first))
-    if $name != "" {
-      break
-    }
-  }
-}
-
-if $name == "" {
-  $name = ($root | path basename)
-}
-
-mut version = ""
-for f in ["build.gradle.kts", "build.gradle"] {
-  let path = ([$root $f] | path join)
-  if not ($path | path exists) {
-    continue
-  }
-
-  let lines = (openn $path | lines)
-  let version_lines = ($lines | where {|line| $line =~ '^\s*version\s*='})
-  if (($version_lines | length) > 0) {
-    $version = (parse-quoted ($version_lines | first))
-    if $version != "" {
-      break
-    }
-  }
-}
-
-if $version == "" {
-  let gradle_props = ([$root "gradle.properties"] | path join)
-  if ($gradle_props | path exists) {
-    let lines = (openn $gradle_props | lines)
-    let version_lines = ($lines | where {|line| $line =~ '^\s*version\s*='})
-    if (($version_lines | length) > 0) {
-      let parsed = (($version_lines | first) | parse -r '^\s*version\s*=\s*(?<version>.+)$')
-      if (($parsed | length) > 0) {
-        $version = (($parsed | get 0.version) | str trim)
-      }
-    }
-  }
-}
-
-if $version == "" {
-  exit 1
-}
-
-$"󰏖 ($name) v($version)"
-'''
+when = 'source ($nu.home-dir | path join ".config" "starship" "gradle_root_project.nu"); gradle-root-project-when'
+command = 'source ($nu.home-dir | path join ".config" "starship" "gradle_root_project.nu"); gradle-root-project-command'
 format = '([$output]($style)) '
 style = "bold white"
 shell = ["/opt/homebrew/bin/nu", "-l", "-c"]
@@ -728,104 +501,16 @@ shell = ["/opt/homebrew/bin/nu", "-l", "-c"]
 [custom.mise_python]
 detect_extensions = ["py"]
 detect_files = [".python-version", "pyproject.toml", "requirements.txt", "requirements-dev.txt", "Pipfile", "poetry.lock", "uv.lock", "setup.py"]
-when = '''
-let result = (^mise current python | complete)
-if $result.exit_code != 0 {
-  exit 1
-}
-
-let parsed = ($result.stdout | parse -r '.*?(?<version>\d+\.\d+\.\d+(?:[-+][A-Za-z0-9.]+)?)')
-if (($parsed | length) == 0) {
-  exit 1
-}
-
-let version = ($parsed | get 0.version | str trim)
-if $version == "" {
-  exit 1
-}
-
-exit 0
-'''
-command = '''
-let result = (^mise current python | complete)
-if $result.exit_code != 0 {
-  exit 1
-}
-
-let parsed = ($result.stdout | parse -r '.*?(?<version>\d+\.\d+\.\d+(?:[-+][A-Za-z0-9.]+)?)')
-if (($parsed | length) == 0) {
-  exit 1
-}
-
-let version = ($parsed | get 0.version | str trim)
-if $version == "" {
-  exit 1
-}
-
-$" ($version)"
-'''
+when = 'source ($nu.home-dir | path join ".config" "starship" "mise_python.nu"); mise-python-when'
+command = 'source ($nu.home-dir | path join ".config" "starship" "mise_python.nu"); mise-python-command'
 shell = ["/opt/homebrew/bin/nu", "-l", "-c"]
 format = "[$output]($style) "
 style = "yellow bold"
 
 [custom.git_tags]
 description = "Show tags on HEAD and the most recent previous tagged commit"
-when = '''
-let git_repo = (^git rev-parse --is-inside-work-tree | complete)
-if $git_repo.exit_code == 0 {
-  exit 0
-}
-
-exit 1
-'''
-command = '''
-let head_tags = (^git tag --points-at HEAD --sort=-creatordate | lines | where {|line| $line != ""} | str join ",")
-
-let start_ref = if ($head_tags == "") {
-  "HEAD"
-} else {
-  let head_prev = (^git rev-parse --verify HEAD^ | complete)
-  if $head_prev.exit_code == 0 {
-    $head_prev.stdout | str trim
-  } else {
-    ""
-  }
-}
-
-mut prev_tags = ""
-if ($start_ref != "") {
-  let nearest_tag_result = (^git describe --tags --abbrev=0 --first-parent $start_ref | complete)
-  if $nearest_tag_result.exit_code == 0 {
-    let nearest_tag = ($nearest_tag_result.stdout | str trim)
-    if $nearest_tag != "" {
-      let commit_result = (^git rev-list -n 1 $nearest_tag | complete)
-      if $commit_result.exit_code == 0 {
-        let tag_commit = ($commit_result.stdout | str trim)
-        if $tag_commit != "" {
-          $prev_tags = (^git tag --points-at $tag_commit --sort=-creatordate | lines | where {|line| $line != ""} | str join ",")
-        }
-      }
-    }
-  }
-}
-
-mut out = ""
-if ($prev_tags != "") {
-  $out = $"󰋚 ($prev_tags)"
-}
-if ($head_tags != "") {
-  if ($out != "") {
-    $out = $"($out)  ($head_tags)"
-  } else {
-    $out = $" ($head_tags)"
-  }
-}
-if ($out == "") {
-  $out = "󱈠·"
-}
-
-$out
-'''
+when = 'source ($nu.home-dir | path join ".config" "starship" "git_tags.nu"); git-tags-when'
+command = 'source ($nu.home-dir | path join ".config" "starship" "git_tags.nu"); git-tags-command'
 format = '([$output]($style) )'
 style = "yellow bold"
 shell = ["/opt/homebrew/bin/nu", "-l", "-c"]
@@ -834,118 +519,7 @@ shell = ["/opt/homebrew/bin/nu", "-l", "-c"]
 description = "Kotlin version from Gradle project config"
 detect_extensions = ["kt", "kts"]
 detect_files = ["settings.gradle.kts", "settings.gradle", "build.gradle.kts", "build.gradle", "gradle/libs.versions.toml", "gradle/libs.toml"]
-command = '''
-def get-kotlin-version-from-catalog [catalog_path: string] {
-  if (not ($catalog_path | path exists)) {
-    return ""
-  }
-
-  let catalog = (try { openn $catalog_path } catch { null })
-  if $catalog == null {
-    return ""
-  }
-
-  let versions = ($catalog.versions? | default {})
-  if (($versions | columns) | any {|c| $c == "kotlinVersion"}) {
-    return ($versions.kotlinVersion | into string)
-  }
-  if (($versions | columns) | any {|c| $c == "kotlin"}) {
-    return ($versions.kotlin | into string)
-  }
-
-  let plugins = ($catalog.plugins? | default {})
-  for key in ($plugins | columns) {
-    let plugin = ($plugins | get $key)
-    let plugin_id = ($plugin.id? | default "" | into string)
-    if not ($plugin_id | str starts-with "org.jetbrains.kotlin") {
-      continue
-    }
-
-    let direct = ($plugin.version? | default "")
-    if $direct != "" {
-      return ($direct | into string)
-    }
-
-    let ref_key = ($plugin.version.ref? | default "")
-    if $ref_key != "" {
-      let ref_version = ($versions | get -o $ref_key)
-      if $ref_version != null {
-        return ($ref_version | into string)
-      }
-    }
-  }
-
-  ""
-}
-
-def get-kotlin-version-from-build-script [path: string] {
-  if (not ($path | path exists)) {
-    return ""
-  }
-
-  let lines = (openn $path | lines)
-  let candidates = ($lines | where {|line|
-    ($line =~ 'kotlin\("[^"]+"\)\s+version\s+"[^"]+"')
-    or ($line =~ 'id\("org\.jetbrains\.kotlin[^"]*"\)\s+version\s+"[^"]+"')
-    or ($line =~ 'id\s+"org\.jetbrains\.kotlin[^"]*"\s+version\s+"[^"]+"')
-  })
-
-  if (($candidates | length) == 0) {
-    return ""
-  }
-
-  let parsed = (($candidates | first) | parse -r '.*version\s+"(?<value>[^"]+)".*')
-  if (($parsed | length) == 0) {
-    return ""
-  }
-
-  $parsed | get 0.value
-}
-
-mut version = ""
-mut catalog = ""
-
-for f in ["settings.gradle.kts", "settings.gradle"] {
-  if not ($f | path exists) {
-    continue
-  }
-
-  let matches = (openn $f | lines | where {|line| $line =~ 'from\(files\(["'"'"'][^"'"'"']+["'"'"']\)\)'})
-  if (($matches | length) == 0) {
-    continue
-  }
-
-  let parsed = (($matches | first) | parse -r '.*from\(files\(["'"'"'](?<path>[^"'"'"']+)["'"'"']\)\).*')
-  if (($parsed | length) > 0) {
-    $catalog = ($parsed | get 0.path)
-    break
-  }
-}
-
-for c in [$catalog, "gradle/libs.versions.toml", "gradle/libs.toml"] {
-  if $c == "" {
-    continue
-  }
-  let found = (get-kotlin-version-from-catalog $c)
-  if $found != "" {
-    $version = $found
-    break
-  }
-}
-
-if $version == "" {
-  $version = (get-kotlin-version-from-build-script "build.gradle.kts")
-}
-if $version == "" {
-  $version = (get-kotlin-version-from-build-script "build.gradle")
-}
-
-if $version == "" {
-  exit 1
-}
-
-$"󱈙 v($version)"
-'''
+command = 'source ($nu.home-dir | path join ".config" "starship" "kotlin_gradle.nu"); kotlin-gradle-command'
 format = '([$output]($style)) '
 style = "bold blue"
 shell = ["/opt/homebrew/bin/nu", "-l", "-c"]

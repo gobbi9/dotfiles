@@ -8,3 +8,8 @@ alias openn = open
 alias open = ^open
 
 alias r = reload
+
+# Has to be a hardcoded alias, because overlay are scoped
+# to inside a function if called from a function
+# It works best when the overlay file has a module definition
+alias o = overlay use --reload overlay.nu
