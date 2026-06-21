@@ -1,19 +1,20 @@
 ---
 name: add-overlay
-description: Add or update a project Nushell overlay in chezmoi-managed config.nu, including overlay bootstrap, project_overlays entries, optional aliases, and optional script-to-binary wrappers with mise path guidance.
+description: Add or update a project Nushell overlay in chezmoi-managed user/overlays.nu (sourced by config.nu), including overlay bootstrap, project_overlays entries, optional aliases, and optional script-to-binary wrappers with mise path guidance.
 ---
 
 # Add Project Overlay
 
 Use this skill when the user wants to add a repository-specific Nushell overlay to the chezmoi-managed Nushell config, or when they want to expose repo scripts as convenient commands, aliases, or binary-style shortcuts.
 
-The primary target file is:
+The primary target files are:
 
-- `chezmoi/private_Library/private_Application Support/nushell/config.nu`
+- `chezmoi/private_Library/private_Application Support/nushell/user/overlays.nu`
+- `chezmoi/private_Library/private_Application Support/nushell/config.nu` (only to ensure `source user/overlays.nu` exists)
 
 ## Expected overlay model
 
-`config.nu` keeps project overlays data-driven:
+`user/overlays.nu` keeps project overlays data-driven:
 
 1. A parse-time bootstrap line for every overlay name used by `overlay hide`:
 
@@ -48,7 +49,7 @@ Keep these two locations in sync. The overlay name in `overlay use ... as <name>
     - Check whether `.local/bin` and `mise.toml` exist if the user wants binary wrappers or command shortcuts for scripts.
     - Do not create wrappers or aliases unless the user asked for them or they are clearly part of the requested overlay setup.
 
-3. Update `config.nu`:
+3. Update `user/overlays.nu`:
 
     - Add one parse-time bootstrap line in the `# parse-time bootstrap for overlay names used in \`overlay hide\`` block:
 
@@ -70,7 +71,17 @@ Keep these two locations in sync. The overlay name in `overlay use ... as <name>
     - Keep the existing data-driven `sync_project_overlays` logic unchanged.
     - Do not duplicate path-toggle logic in hooks.
 
-4. If creating a new overlay module, prefer `scripts/commands.nu` with exported commands and aliases:
+4. Ensure `config.nu` imports overlays:
+
+    - Confirm this line exists in `chezmoi/private_Library/private_Application Support/nushell/config.nu`:
+
+        ```nu
+        source user/overlays.nu
+        ```
+
+    - If it is missing, add it under the external custom user config `source` block.
+
+5. If creating a new overlay module, prefer `scripts/commands.nu` with exported commands and aliases:
 
     ```nu
     # Repo-local Nushell command overlay for discoverable help.
@@ -97,13 +108,13 @@ Keep these two locations in sync. The overlay name in `overlay use ... as <name>
     export alias ex = example
     ```
 
-5. If the user asks only for aliases:
+6. If the user asks only for aliases:
 
     - Add `export alias <short> = <command>` entries to the overlay module.
     - Do not require `mise.toml` or `.local/bin` just for aliases.
     - Validate that the aliased command is available in the overlay context or explain any external requirement.
 
-6. If the user asks to convert scripts to binaries, binary wrappers, or shortcuts:
+7. If the user asks to convert scripts to binaries, binary wrappers, or shortcuts:
 
     - Prefer repo-local executable wrappers in `.local/bin/<name>`.
     - Suggest adding or updating `mise.toml` so `.local/bin` is on PATH when the repo is active:
@@ -128,7 +139,7 @@ Keep these two locations in sync. The overlay name in `overlay use ... as <name>
     - For Nushell wrapper scripts, use a direct shebang and forward arguments:
 
         ```nu
-        #!/opt/homebrew/bin/nu
+        #!/usr/bin/env nu
 
         def repo-root [] {
           let result = (^git rev-parse --show-toplevel | complete)
@@ -150,7 +161,7 @@ Keep these two locations in sync. The overlay name in `overlay use ... as <name>
 
     - Make wrapper files executable.
 
-7. Follow Nushell conventions:
+8. Follow Nushell conventions:
 
     - Use `$nu.home-dir` for home-relative paths in scripts and config records where possible.
     - Use `error make --unspanned` for custom errors.
@@ -159,7 +170,7 @@ Keep these two locations in sync. The overlay name in `overlay use ... as <name>
 
 ## Validation
 
-After edits, validate `config.nu` by sourcing the active config and the chezmoi source config:
+After edits, validate the startup config load (which includes `source user/overlays.nu`) by sourcing the active config and the chezmoi source config:
 
 ```shell
 cat <<'NU' | /opt/homebrew/bin/nu -n /dev/stdin
