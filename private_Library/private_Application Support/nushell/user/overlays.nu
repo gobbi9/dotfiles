@@ -1,10 +1,11 @@
-# Custom overlay management
+# Custom overlay management, https://www.nushell.sh/book/overlays.html#overlays
 
-# Parse-time bootstrap for overlay names used in `overlay hide`
+# Parse-time bootstrap for overlay names used in `overlay hide`,
+# duplication necessary due to nushell's overlay module resolution behavior.
 overlay use ~/projects/emails/scripts/commands.nu as cf_commands
 overlay use ~/projects/opensockets/mcpd/overlay.nu as mcpd_commands
 
-# project overlays (add more entries here as needed)
+# Project overlays (add more entries here as needed)
 let project_overlays = [
   {
     repo: $"($nu.home-dir)/projects/emails"
@@ -20,6 +21,10 @@ let project_overlays = [
   }
 ]
 
+# ------------------ Querying the overlay file ------------------
+
+# Parse an overlay module file and extract exported commands, aliases, and externs.
+# Used by `i` to show quick, human-readable overlay introspection.
 let overlay_exports = {|module_path: string|
   if not ($module_path | path exists) {
     error make --unspanned { msg: $"Overlay module not found: ($module_path)" }
@@ -74,6 +79,8 @@ let current_project_overlay = {|cwd: string|
   | first
 }
 
+# Inspect overlay exports for the current repo (or a provided module path).
+# Prints exported commands, aliases, and externs for fast discovery/help.
 def "i" [
   cwd?: string # Optional directory to inspect. Defaults to the current $env.PWD.
   --module-path(-m): string # Inspect this overlay module file directly instead of resolving from project_overlays.
@@ -138,6 +145,11 @@ def "i" [
   print $"(ansi steelblue1a)  Type help <command | alias | extern> for more info.(ansi reset)"
 }
 
+# ------------------ Overlays' synchronization ------------------
+
+# Overlays are not loaded from a directory automatically,
+# so we need to sync them manually when the PWD changes.
+# Only the overlays for the current directory are enabled at a time, so we disable all others first.
 let sync_project_overlays = {|cwd: string|
   for overlay_def in $project_overlays {
     if (do $in_overlay_repo $cwd $overlay_def.repo) {
@@ -148,6 +160,7 @@ let sync_project_overlays = {|cwd: string|
   }
 }
 
+# Directory change hook to sync project overlays
 $env.config = ($env.config | upsert hooks.env_change.PWD (
   ($env.config | get -o hooks.env_change.PWD | default [])
   | append { |before, after|
@@ -155,5 +168,5 @@ $env.config = ($env.config | upsert hooks.env_change.PWD (
     }
 ))
 
-# sync current shell state
+# On shell startup, load correct overlays for the current directory
 do $sync_project_overlays ($env.PWD | default "")
