@@ -1,36 +1,26 @@
-# Homebrew
-$env.PATH = (
-  $env.PATH | prepend "/opt/homebrew/bin" | prepend "/opt/homebrew/sbin"
-)
-
-# Common macOS user binaries
-$env.PATH = (
-  $env.PATH |append "/usr/local/bin"
-)
-
-# OrbStack, just symlinks, not sure if required
-$env.PATH = (
-    $env.PATH | append `~/.orbstack/bin`
-)
-
-# JetBrains Toolbox
-$env.PATH = (
-    $env.PATH | append `~/Library/Application Support/JetBrains/Toolbox/scripts`
-)
-
 # Disable the startup banner
 $env.config.show_banner = false
 
-# Editor for nu
-$env.config.buffer_editor = ["zed", "--wait"]
+# PATH
+let toolbox_path  = $"($nu.home-dir)/Library/Application Support/JetBrains/Toolbox/scripts"
+let orbstack_path = $"($nu.home-dir)/.orbstack/bin"
+let lmstudio_path = $"($nu.home-dir)/.lmstudio/bin"
 
-# Editors for external tools like git
-$env.EDITOR = "zed --wait"
-$env.VISUAL = "zed --wait"
-$env.GIT_EDITOR = "zed --wait"
+$env.PATH = ($env.PATH | append "/opt/homebrew/bin")   # Homebrew
+$env.PATH = ($env.PATH | append "/opt/homebrew/sbin")  # Homebrew
+$env.PATH = ($env.PATH | append "/usr/local/bin")      # Common macOS user binaries
+$env.PATH = ($env.PATH | append $orbstack_path)        # OrbStack, just symlinks, not sure if required
+$env.PATH = ($env.PATH | append $toolbox_path)         # JetBrains Toolbox
+$env.PATH = ($env.PATH | append $lmstudio_path)        # LM Studio CLI (lms)
+$env.PATH = ($env.PATH | uniq | sort -r)               # deduplicate PATH entries
+
+# Editors
+let zed = "zed --wait"
+
+$env.config.buffer_editor = ($zed | split row " ") # Editor for nushell
+$env.EDITOR               =  $zed                  # Editor for command line tools
+$env.VISUAL               =  $zed                  # Editor for visual tools
+$env.GIT_EDITOR           =  $zed                  # Editor for git
 
 # 1Password SSH socket
 $env.SSH_AUTH_SOCK =  $"($nu.home-dir)/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
-
-# Added by LM Studio CLI (lms)
-$env.PATH = ($env.PATH | append ($nu.home-dir | path join '.lmstudio' 'bin'))
