@@ -12,7 +12,7 @@ $env.PATH = ($env.PATH | append "/usr/local/bin")      # Common macOS user binar
 $env.PATH = ($env.PATH | append $orbstack_path)        # OrbStack, just symlinks, not sure if required
 $env.PATH = ($env.PATH | append $toolbox_path)         # JetBrains Toolbox
 $env.PATH = ($env.PATH | append $lmstudio_path)        # LM Studio CLI (lms)
-$env.PATH = ($env.PATH | uniq | sort -r)               # deduplicate PATH entries
+$env.PATH = ($env.PATH | uniq | sort)                  # deduplicate PATH entries, mise has to be first
 
 # Editors
 let zed = "zed --wait"
