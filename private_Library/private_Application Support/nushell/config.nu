@@ -32,9 +32,9 @@ source user/env.nu          # Environment variables
 source user/aliases.nu      # Aliases
 source user/pdf.nu          # Pdf utilities
 source user/edit.nu         # `edit` commands for misc config
-source user/gh-cli.nu       # GH CLI wrappers
+source user/gh-cli.nu       # GitHub CLI wrappers
 source user/overlays.nu     # Custom overlay management
-source user/touchid-sudo.nu # enable sudo touchID
+source user/touchid-sudo.nu # Enable sudo touchID
 
 # ---- Import custom functions for global use ----
 use `~/projects/mcp/generate-mcp.nu`
