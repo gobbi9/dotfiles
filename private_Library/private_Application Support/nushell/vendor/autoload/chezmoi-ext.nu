@@ -126,18 +126,40 @@ export def "chezmoi-ext-starship-command" [] {
   $" !($counts.total) ⇣($counts.down) ⇡($counts.up)"
 }
 
-def chezmoi-ext-find-source-files [query: string] {
+def chezmoi-ext-source-files [] {
   let source_root = (chezmoi-ext-source-root-or-empty)
   if $source_root == "" {
     return []
   }
 
+  let result = (^rg --files --hidden --follow --no-ignore $source_root | complete)
+  if $result.exit_code != 0 {
+    return []
+  }
+
+  $result.stdout
+  | lines
+  | where {|line| ($line | str trim) != "" }
+  | each {|line| $line | path relative-to $source_root }
+  | where {|relpath| not ($relpath | str starts-with ".git/") }
+}
+
+def chezmoi-ext-find-source-files [query: string] {
+  let files = (chezmoi-ext-source-files)
+  if ($files | is-empty) {
+    return []
+  }
+
+  let trimmed_query = ($query | str trim)
+  if $trimmed_query == "" {
+    return $files
+  }
+
   let result = (
-    if ($query | str trim) == "" {
-      ^fd --hidden --follow --type file --no-ignore . $source_root | complete
-    } else {
-      ^fd --hidden --follow --type file --no-ignore --fixed-strings $query $source_root | complete
-    }
+    $files
+    | str join (char nl)
+    | ^fzf --filter $trimmed_query
+    | complete
   )
 
   if $result.exit_code != 0 {
@@ -147,7 +169,6 @@ def chezmoi-ext-find-source-files [query: string] {
   $result.stdout
   | lines
   | where {|line| ($line | str trim) != "" }
-  | each {|line| $line | path relative-to $source_root }
 }
 
 def chezmoi-ext-completion-last-token [context: string] {
@@ -159,35 +180,29 @@ def chezmoi-ext-completion-last-token [context: string] {
   $parsed | get 0.partial
 }
 
-def chezmoi-ext-completion-value [partial: string, relpath: string] {
-  if ($partial | str trim) == "" {
-    return $relpath
-  }
 
-  let basename = ($relpath | path basename)
-  if ($basename | str starts-with $partial) {
-    return $basename
-  }
-
-  let parts = ($basename | split row $partial)
-  if ($parts | length) > 1 {
-    return ($partial + ($parts | skip 1 | str join $partial))
-  }
-
-  $basename
-}
 
 def "nu-complete chezmoi edit file" [context: string] {
   let partial = (chezmoi-ext-completion-last-token $context)
 
-  chezmoi-ext-find-source-files $partial
-  | each {|relpath|
-      {
-        value: (chezmoi-ext-completion-value $partial $relpath)
-        description: $relpath
+  let completions = (
+    chezmoi-ext-find-source-files $partial
+    | each {|relpath|
+        {
+          value: $relpath
+          description: $relpath
+        }
       }
-    }
-  | uniq-by value
+    | uniq-by value
+  )
+
+  {
+    options: {
+      case_sensitive: false,
+      completion_algorithm: fuzzy,
+    },
+    completions: $completions
+  }
 }
 
 # Easy chezmoi diff summary (path list, no line hunks).
@@ -228,20 +243,58 @@ export def "chezmoi ediff" [index?: int] {
   | str join (char nl)
 }
 
-# Open the first source match in the target filesystem with Zed.
-# - Searches inside the chezmoi source repo using `fd`.
-# - Maps the source path to a target path via `chezmoi target-path`.
-# - Uses `zed-open -n` to open in a new Zed window.
-# - If no match is found, exits with a descriptive error.
-export def "chezmoi edit" [file: string@"nu-complete chezmoi edit file"] {
-  let matches = (chezmoi-ext-find-source-files $file)
-  if ($matches | is-empty) {
+def chezmoi-ext-select-source-file [] {
+  let files = (chezmoi-ext-source-files)
+  if ($files | is-empty) {
     error make --unspanned {
-      msg: $"No target file matched: ($file)"
+      msg: "No source files found in the chezmoi source repo."
     }
   }
 
-  let source_match = ($matches | first)
+  let result = (
+    $files
+    | str join (char nl)
+    | ^fzf --prompt "chezmoi edit> " --height 45% --layout reverse --border
+    | complete
+  )
+
+  if $result.exit_code != 0 {
+    return null
+  }
+
+  let selected = ($result.stdout | str trim)
+  if $selected == "" {
+    return null
+  }
+
+  $selected
+}
+
+# Open a source match in the target filesystem with Zed.
+# - `chezmoi edit <query>` picks the first filtered source match.
+# - `chezmoi edit` opens an interactive fzf picker over source files.
+# - Selected source path is mapped with `chezmoi target-path`.
+# - Opens target file with `zed-open --new`.
+export def "chezmoi edit" [file?: string@"nu-complete chezmoi edit file"] {
+  let source_match = (
+    if $file == null or (($file | str trim) == "") {
+      chezmoi-ext-select-source-file
+    } else {
+      let matches = (chezmoi-ext-find-source-files $file)
+      if ($matches | is-empty) {
+        error make --unspanned {
+          msg: $"No target file matched: ($file)"
+        }
+      }
+
+      $matches | first
+    }
+  )
+
+  if $source_match == null {
+    return
+  }
+
   let target = (^chezmoi target-path $source_match | str trim)
   if $target == "" {
     error make --unspanned {
