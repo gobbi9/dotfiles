@@ -135,10 +135,32 @@ Use `chezmoi ediff` for a simple directional summary (no line hunks, templates e
 chezmoi ediff
 ```
 
+Output is indexed:
+
+- `[0] ⇣ <path>`
+- `[1] ⇡ <path>`
+
 Legend:
 
 - `⇣ <path>`: destination changed; keep local file and pull it into source repo (`chezmoi re-add <path>`)
 - `⇡ <path>`: source differs from destination; push source to destination (`chezmoi apply <path>`)
+
+Inspect one entry by index:
+
+```bash
+chezmoi ediff 0
+```
+
+This runs `chezmoi diff` only for that indexed target path.
+
+Edit a target file by fuzzy source-name lookup (first `fd` match):
+
+```bash
+chezmoi edit iterm2.plist
+```
+
+- Uses tab completion: `chezmoi edit <TAB>` and `chezmoi edit iterm<TAB>`
+- Opens the resolved target file in Zed via `zed-open -n`
 
 Batch helpers:
 
@@ -268,6 +290,18 @@ chezmoi status
 
 ```bash
 chezmoi ediff
+```
+
+#### Show diff for one indexed directional entry
+
+```bash
+chezmoi ediff 0
+```
+
+#### Open a target file from source-name search (custom)
+
+```bash
+chezmoi edit iterm2.plist
 ```
 
 #### Show managed files
@@ -599,6 +633,8 @@ graph TD
 ```
 
 Note: `git clone https://...` keeps full git history; the later `git remote set-url` step only switches `origin` from HTTPS to SSH.
+
+⚠️ `mise trust` must be manually run for repos that have a mise.toml, there is no easy way to track the trusted mise projects.
 
 ### Homebrew Bundle (`Brewfile`)
 

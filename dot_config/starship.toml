@@ -450,14 +450,14 @@ Zorin = " "
 [package]
 format = '[$symbol$version]($style) '
 symbol = "󰏗 "
-style = "bold white"
+style = "bold bright-black"
 
 [custom.rust_workspace_packages]
 description = "Show all Rust workspace packages with versions"
 when = 'source ($nu.home-dir | path join ".config" "starship" "rust_workspace_packages.nu"); rust-workspace-packages-when'
 command = 'source ($nu.home-dir | path join ".config" "starship" "rust_workspace_packages.nu"); rust-workspace-packages-command'
 format = "[$output]($style) "
-style = "bold white"
+style = "bold bright-black"
 ignore_timeout = true
 shell = ["/opt/homebrew/bin/nu", "-l", "-c"]
 
@@ -496,7 +496,7 @@ description = "Show Gradle root project name and version"
 when = 'source ($nu.home-dir | path join ".config" "starship" "gradle_root_project.nu"); gradle-root-project-when'
 command = 'source ($nu.home-dir | path join ".config" "starship" "gradle_root_project.nu"); gradle-root-project-command'
 format = '([$output]($style)) '
-style = "bold white"
+style = "bold bright-black"
 shell = ["/opt/homebrew/bin/nu", "-l", "-c"]
 
 [custom.mise_python]

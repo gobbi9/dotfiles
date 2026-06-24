@@ -24,3 +24,6 @@ $env.GIT_EDITOR           =  $zed                  # Editor for git
 
 # 1Password SSH socket
 $env.SSH_AUTH_SOCK =  $"($nu.home-dir)/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
+
+# mise ignore chezmoi repo
+$env.MISE_IGNORED_CONFIG_PATHS = $"($nu.home-dir)/.local/share/chezmoi"

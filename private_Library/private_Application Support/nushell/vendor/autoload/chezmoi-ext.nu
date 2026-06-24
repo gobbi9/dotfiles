@@ -126,27 +126,130 @@ export def "chezmoi-ext-starship-command" [] {
   $" !($counts.total) ⇣($counts.down) ⇡($counts.up)"
 }
 
+def chezmoi-ext-find-source-files [query: string] {
+  let source_root = (chezmoi-ext-source-root-or-empty)
+  if $source_root == "" {
+    return []
+  }
+
+  let result = (
+    if ($query | str trim) == "" {
+      ^fd --hidden --follow --type file --no-ignore . $source_root | complete
+    } else {
+      ^fd --hidden --follow --type file --no-ignore --fixed-strings $query $source_root | complete
+    }
+  )
+
+  if $result.exit_code != 0 {
+    return []
+  }
+
+  $result.stdout
+  | lines
+  | where {|line| ($line | str trim) != "" }
+  | each {|line| $line | path relative-to $source_root }
+}
+
+def chezmoi-ext-completion-last-token [context: string] {
+  let parsed = ($context | parse -r '(?s)^(?:.*\s)?(?<partial>\S*)$')
+  if (($parsed | length) == 0) {
+    return ""
+  }
+
+  $parsed | get 0.partial
+}
+
+def chezmoi-ext-completion-value [partial: string, relpath: string] {
+  if ($partial | str trim) == "" {
+    return $relpath
+  }
+
+  let basename = ($relpath | path basename)
+  if ($basename | str starts-with $partial) {
+    return $basename
+  }
+
+  let parts = ($basename | split row $partial)
+  if ($parts | length) > 1 {
+    return ($partial + ($parts | skip 1 | str join $partial))
+  }
+
+  $basename
+}
+
+def "nu-complete chezmoi edit file" [context: string] {
+  let partial = (chezmoi-ext-completion-last-token $context)
+
+  chezmoi-ext-find-source-files $partial
+  | each {|relpath|
+      {
+        value: (chezmoi-ext-completion-value $partial $relpath)
+        description: $relpath
+      }
+    }
+  | uniq-by value
+}
+
 # Easy chezmoi diff summary (path list, no line hunks).
-# Prints one managed path per line with direction:
-# - `⇡ <path>`: apply source to destination (`chezmoi apply <path>`)
-# - `⇣ <path>`: re-add destination state to source (`chezmoi re-add <path>`)
+# Prints one managed path per line with direction and index:
+# - `[N] ⇡ <path>`: apply source to destination (`chezmoi apply <path>`)
+# - `[N] ⇣ <path>`: re-add destination state to source (`chezmoi re-add <path>`)
 # - Uses `chezmoi status --exclude templates` by default.
 # `MM` entries are grouped under `⇣` by design.
-export def "chezmoi ediff" [] {
+#
+# Optional index argument:
+# - `chezmoi ediff <index>` runs `chezmoi diff` for just that target path.
+export def "chezmoi ediff" [index?: int] {
   let entries = (chezmoi-ext-entries)
   if ($entries | is-empty) {
     return
   }
 
-  $entries
-  | each {|entry|
-      if $entry.direction == "down" {
-        $"⇣ ($entry.path)"
-      } else {
-        $"⇡ ($entry.path)"
+  if $index != null {
+    if $index < 0 or $index >= ($entries | length) {
+      error make --unspanned {
+        msg: $"Invalid index: ($index). Use an index from 0 to (($entries | length) - 1)."
       }
     }
+
+    let entry = ($entries | get $index)
+    let target = (chezmoi-ext-target-path $entry.path)
+    ^chezmoi diff -- $target
+    return
+  }
+
+  $entries
+  | enumerate
+  | each {|row|
+      let entry = $row.item
+      let arrow = (if $entry.direction == "down" { "⇣" } else { "⇡" })
+      $"[($row.index)] ($arrow) ($entry.path)"
+    }
   | str join (char nl)
+}
+
+# Open the first source match in the target filesystem with Zed.
+# - Searches inside the chezmoi source repo using `fd`.
+# - Maps the source path to a target path via `chezmoi target-path`.
+# - Uses `zed-open -n` to open in a new Zed window.
+# - If no match is found, exits with a descriptive error.
+export def "chezmoi edit" [file: string@"nu-complete chezmoi edit file"] {
+  let matches = (chezmoi-ext-find-source-files $file)
+  if ($matches | is-empty) {
+    error make --unspanned {
+      msg: $"No target file matched: ($file)"
+    }
+  }
+
+  let source_match = ($matches | first)
+  let target = (^chezmoi target-path $source_match | str trim)
+  if $target == "" {
+    error make --unspanned {
+      msg: $"Failed to resolve target path for source file: ($source_match)"
+    }
+  }
+
+  zed-open $target --new
 }
 
 # Apply all `⇡` entries reported by `chezmoi ediff` in one command.
