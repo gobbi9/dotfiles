@@ -123,6 +123,31 @@ This is effectively:
 
 > "push repo state to machine"
 
+#### Directional helper commands (Nushell extension)
+
+These commands are provided by the Nushell extension in:
+
+- `~/Library/Application Support/nushell/vendor/autoload/chezmoi-ext.nu`
+
+Use `chezmoi ediff` for a simple directional summary (no line hunks):
+
+```bash
+chezmoi ediff
+```
+
+Legend:
+
+- `⇣ <path>`: destination changed; keep local file and pull it into source repo (`chezmoi re-add <path>`)
+- `⇡ <path>`: source differs from destination; push source to destination (`chezmoi apply <path>`)
+
+Batch helpers:
+
+```bash
+chezmoi down   # re-add all ⇣ paths
+chezmoi up     # apply all ⇡ paths
+chezmoi sync   # run chezmoi down, then chezmoi up
+```
+
 ### Very important behavior
 
 `chezmoi apply` can overwrite filesystem changes.
@@ -235,6 +260,12 @@ chezmoi diff
 
 ```bash
 chezmoi status
+```
+
+#### Show directional summary (custom)
+
+```bash
+chezmoi ediff
 ```
 
 #### Show managed files
@@ -557,7 +588,8 @@ graph TD
     N8 --> N9["`op signin`"]
     N3 --> N9
     N9 --> N10["`chezmoi apply`"]
-    N10 --> N11["`cd ~/.local/share/chezmoi && git remote set-url origin git@github.com:gobbi9/dotfiles.git`"]
+    N10 --> N10a["Open iTerm2 Settings → General → Settings\nEnable external settings and set folder to `~/.config`\nthen click `Save Now`"]
+    N10a --> N11["`cd ~/.local/share/chezmoi && git remote set-url origin git@github.com:gobbi9/dotfiles.git`"]
     N11 --> N12["Open Zed once\n(auto_install_extensions restores extensions)"]
 
     click N2 "https://brew.sh" "Homebrew installation page"
@@ -708,6 +740,20 @@ This is the preferred way for Agents to run Nushell scripts that do not require 
 git pull
 chezmoi apply
 ```
+
+##### Restore iTerm2 settings from chezmoi-managed `~/.config/com.googlecode.iterm2.plist`
+
+After `chezmoi apply` has created `~/.config/com.googlecode.iterm2.plist`, configure iTerm2 to read from that file location:
+
+1. Open iTerm2.
+2. Go to `iTerm2 → Settings... → General → Settings`.
+3. Enable `Load settings from a custom folder or URL`.
+4. Set the folder path to `~/.config` (or `/Users/<your-user>/.config`).
+5. Confirm the green check appears, then click `Save Now`.
+
+Notes:
+- iTerm2 reads the plist by filename, so the folder must contain `com.googlecode.iterm2.plist`.
+- If settings do not immediately reflect, quit and reopen iTerm2.
 
 ---
 
