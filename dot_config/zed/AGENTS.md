@@ -27,7 +27,8 @@ Precedence:
 
 ## Terminal
 
-- `nushell` is the login shell, installed in `/opt/homebrew/bin/nu`, configured in `~/Library/Application Support/nushell/config.nu`.
+- `nushell` is the login shell, installed in `/opt/homebrew/bin/nu`.
+- Nushell config is split: entrypoint at `~/Library/Application Support/nushell/config.nu`, with user modules under `~/Library/Application Support/nushell/user/*.nu`.
 - `nushell` autoload scripts should be placed in `~/Library/Application Support/nushell/vendor/autoload`.
 - Provide shell snippets in optimized Nushell unless the user asks otherwise.
 - Prefer Nushell scripts over Python scripts for intermediate steps. Do not use Python scripts for intermediate steps unless the user asks otherwise.
@@ -48,7 +49,7 @@ Precedence:
 Use these conventions when writing or reviewing Nushell scripts:
 
 - Home directory must be accessed via `$nu.home-dir` when writing scripts, unless it is not possible otherwise.
-- Use aliases set in `~/Library/Application Support/nushell/config.nu` (this is mandatory):
+- Use aliases set in `~/Library/Application Support/nushell/user/aliases.nu` (this is mandatory):
 
 ```nu
 # keep MacOS 'open' as 'open', and replace Nushell's built-in 'open' with 'openn'
@@ -72,27 +73,35 @@ alias open = ^open
 - Always create custom Nushell error messages with `--unspanned` (for example: `error make --unspanned { msg: "..." }`).
 - Validate nushell scripts for deprecation warnings, and fix any deprecated commands.
 
-## Nushell overlays (`config.nu`)
+## Nushell overlays (`user/overlays.nu`)
 
-When updating `~/.local/share/chezmoi/private_Library/private_Application Support/nushell/config.nu` overlays:
+When adding/updating overlays, use the current **manual activation** model:
 
-- Keep overlays data-driven through `project_overlays`.
-- Add new overlays by appending one record with:
-    - `repo`: absolute repo path (prefer `$nu.home-dir` interpolation).
-    - `enable`: closure with `overlay use <commands.nu> as <overlay_name>`.
-    - `disable`: closure with `overlay hide "<overlay_name>"`.
-- Do not duplicate path-toggle logic in hooks; keep it centralized in `sync-project-overlays`.
-- Maintain parse-time validity for `overlay hide` by ensuring each hidden overlay name is bootstrapped once with `overlay use ... as <name>` before hide usage.
-- **Manual maintenance required:** keep the bootstrap `overlay use ... as <name>` lines at the beginning of the overlay block in sync with `project_overlays` (add/remove/rename together).
-- After edits, validate by sourcing config with Nushell:
+- Overlay helper/introspection logic lives in:
+    - `~/.local/share/chezmoi/private_Library/private_Application Support/nushell/user/overlays.nu`
+- It is sourced from the config entrypoint:
+    - `~/.local/share/chezmoi/private_Library/private_Application Support/nushell/config.nu`
+    - via `source user/overlays.nu`
+- Activation is manual (for example `o`), not automatic via PWD hooks.
+- There is no `project_overlays` registry and no `sync-project-overlays` hook flow.
+- Prefer top-level exports in repo overlay modules (`overlay.nu` or `scripts/commands.nu`):
+    - `export alias ...`
+    - `export def ...`
+    - `export extern ...`
+- Keep Nushell helper functions small/readable and use custom errors with:
+    - `error make --unspanned { msg: "..." }`
+- If starship overlay indicators are used, prefer static/file-derived indicators (for example exported command count), not live active-overlay state.
+
+After edits, validate by sourcing runtime config and the specific split file you changed:
 
 ```shell
 cat <<'NU' | /opt/homebrew/bin/nu -n /dev/stdin
-source '/Users/gobbi/Library/Application Support/nushell/config.nu'
-source '/Users/gobbi/.local/share/chezmoi/private_Library/private_Application Support/nushell/config.nu'
+source '/Users/gobbi/.local/share/chezmoi/private_Library/private_Application Support/nushell/user/overlays.nu'
 print 'config loaded'
 NU
 ```
+
+Inform the user that `chezmoi apply` and `reload` is required to see changes.
 
 ## Preferred tools
 
@@ -103,8 +112,19 @@ NU
 - If a package is only available on Homebrew, do not add it to `mise.toml`; install/manage it via `brew` instead.
 - Use `brew` for non-runtime tooling.
 - When running project tools that may be provided by `mise`, execute them from the project directory through `mise exec -- <tool> <args>` instead of assuming they are available on the agent's default `PATH`.
-  - Examples: `mise exec -- cargo test`, `mise exec -- npm test`, `mise exec -- go test ./...`, `mise exec -- java -version`.
-  - If a tool command fails because it is not found, retry with `mise exec -- ...` before reporting that the tool is unavailable.
+    - Examples: `mise exec -- cargo test`, `mise exec -- npm test`, `mise exec -- go test ./...`, `mise exec -- java -version`.
+    - If a tool command fails because it is not found, retry with `mise exec -- ...` before reporting that the tool is unavailable.
+
+### Modern CLI preference (installed on this system)
+
+- Prefer these tools over defaults when it makes sense:
+    - `rg` over `grep` for recursive text search.
+    - `fd` over `find` for interactive/project file discovery.
+    - `bat` over `cat` when human-readable output (syntax highlight/paging) is helpful.
+    - `fzf` for interactive selection/filtering in terminal workflows.
+    - `zoxide` (`z`, `zi`) for interactive directory jumping.
+- Keep default tools when behavior must be strictly POSIX/stable for scripts, CI, or machine-parsed output.
+- For non-interactive scripted commands, prefer deterministic flags (for example: `rg --no-heading --line-number`, `fd --strip-cwd-prefix`) and avoid relying on interactive UI behavior.
 
 ## Security
 

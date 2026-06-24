@@ -1,7 +1,13 @@
+# Clone of cat(1) with syntax highlighting and Git integration
+brew "bat"
 # Manage your dotfiles across multiple diverse machines, securely
 brew "chezmoi"
 # Perl lib for reading and writing EXIF metadata
 brew "exiftool"
+# Simple, fast and user-friendly alternative to find
+brew "fd"
+# Command-line fuzzy finder written in Go
+brew "fzf"
 # Zstandard is a real-time compression algorithm
 brew "zstd"
 # GitHub command-line tool
@@ -26,6 +32,8 @@ brew "ocrmypdf"
 brew "plantuml"
 # Theme for zsh
 brew "powerlevel10k"
+# Search tool like grep and The Silver Searcher
+brew "ripgrep"
 # Cross-shell prompt for astronauts
 brew "starship"
 # Manipulate and query tags on macOS files
@@ -36,6 +44,8 @@ brew "tesseract-lang"
 brew "tmux"
 # Extremely fast Python package installer and resolver, written in Rust
 brew "uv"
+# Shell extension to navigate your filesystem faster
+brew "zoxide"
 # Command-line interface for 1Password
 cask "1password-cli"
 # Photography workflow application and raw developer
@@ -47,3 +57,4 @@ cask "font-monofur-nerd-font"
 go "cmd/go"
 go "cmd/gofmt"
 uv "specify-cli"
+npm "corepack"
