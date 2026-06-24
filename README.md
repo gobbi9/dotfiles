@@ -129,7 +129,7 @@ These commands are provided by the Nushell extension in:
 
 - `~/Library/Application Support/nushell/vendor/autoload/chezmoi-ext.nu`
 
-Use `chezmoi ediff` for a simple directional summary (no line hunks):
+Use `chezmoi ediff` for a simple directional summary (no line hunks, templates excluded):
 
 ```bash
 chezmoi ediff
@@ -143,10 +143,12 @@ Legend:
 Batch helpers:
 
 ```bash
-chezmoi down   # re-add all ⇣ paths
-chezmoi up     # apply all ⇡ paths
-chezmoi sync   # run chezmoi down, then chezmoi up
+chezmoi down   # re-add all ⇣ paths (templates excluded)
+chezmoi up     # apply all ⇡ paths (templates excluded)
+chezmoi sync   # run chezmoi down, then chezmoi up (templates excluded)
 ```
+
+To inspect template-backed diffs (for example `onepasswordRead` sources), run `chezmoi diff` manually.
 
 ### Very important behavior
 

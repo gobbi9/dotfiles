@@ -30,18 +30,8 @@ def chezmoi-ext-in-source-repo [] {
   (($git_root | path expand) == ($source_root | path expand))
 }
 
-def chezmoi-ext-should-exclude-templates [] {
-  let raw = ($env.STARSHIP_CHEZMOI_EXCLUDE_TEMPLATES? | default "0" | into string)
-  let value = ($raw | str downcase)
-  ($value == "1") or ($value == "true") or ($value == "yes")
-}
-
 def chezmoi-ext-status-result [] {
-  if (chezmoi-ext-should-exclude-templates) {
-    return (^chezmoi status --no-pager --path-style relative --exclude templates | complete)
-  }
-
-  ^chezmoi status --no-pager --path-style relative | complete
+  ^chezmoi status --no-pager --path-style relative --exclude templates | complete
 }
 
 def chezmoi-ext-status-lines [] {
@@ -124,6 +114,7 @@ export def "chezmoi-ext-starship-when" [] {
 
 # Starship renderer for chezmoi summary counts.
 # Output format: ` !<total> ⇣<down> ⇡<up>`
+# - Uses `chezmoi status --exclude templates` (no template fetches).
 # - ⇣ includes any entry whose first status column is set (including `MM`).
 # - ⇡ includes entries whose first column is blank and second is set.
 export def "chezmoi-ext-starship-command" [] {
@@ -139,6 +130,7 @@ export def "chezmoi-ext-starship-command" [] {
 # Prints one managed path per line with direction:
 # - `⇡ <path>`: apply source to destination (`chezmoi apply <path>`)
 # - `⇣ <path>`: re-add destination state to source (`chezmoi re-add <path>`)
+# - Uses `chezmoi status --exclude templates` by default.
 # `MM` entries are grouped under `⇣` by design.
 export def "chezmoi ediff" [] {
   let entries = (chezmoi-ext-entries)
