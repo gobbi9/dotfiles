@@ -1,4 +1,4 @@
-def "--pdf quality" [] {
+def pdf_quality [] {
   ["screen", "ebook", "printer", "prepress", "default"]
 }
 
@@ -6,7 +6,7 @@ def "--pdf quality" [] {
 export def "pdf compress" [
   input: string
   output: string
-  quality: string@"--pdf quality" = "ebook"
+  quality: string@pdf_quality = "ebook"
 ] {
   ^gs -q -sDEVICE=pdfwrite -dNOPAUSE -dQUIET -dBATCH -dSAFER $"(-dPDFSETTINGS=/($quality))" -dCompatibilityLevel=1.4 $"(-sOutputFile=($output))" $input
 }

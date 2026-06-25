@@ -1,24 +1,5 @@
-#!/usr/bin/env nu
-
-# Sync installed Zed extensions into settings.json -> auto_install_extensions,
-# then sync relevant Zed config paths into chezmoi source state.
-#
-# Default behavior:
-# - Detects Zed settings path for current OS
-# - Detects installed extensions directory for current OS
-# - Writes a sorted auto_install_extensions object with installed extensions set to true
-# - Runs `chezmoi add` for:
-#   - settings.json
-#   - keymap.json (if present)
-#   - tasks.json (if present)
-#   - snippets/ (if present)
-#   - themes/ (if present)
-#
-# Idempotent behavior:
-# - If auto_install_extensions is already up to date, settings.json is not rewritten
-# - Re-running is safe
-#
-# Use --dry-run to preview without writing.
+use shared/tags.nu [tag_info tag_ok tag_warn tag_dry tag_error]
+use shared/sync-utils.nu [ensure_parent_dir ensure_command_available run_chezmoi_add]
 
 def default_settings_path [] {
   let os_name = ($nu.os-info.name | str downcase)
@@ -38,9 +19,7 @@ def extension_dir_candidates [] {
 
   if ($os_name | str contains "windows") {
     let localappdata = ($env.LOCALAPPDATA? | default ($home | path join "AppData" "Local"))
-    [
-      ($localappdata | path join "Zed" "extensions" "installed")
-    ]
+    [($localappdata | path join "Zed" "extensions" "installed")]
   } else if ($os_name | str contains "mac") {
     [
       ($home | path join "Library" "Application Support" "Zed" "extensions" "installed")
@@ -69,30 +48,16 @@ def collect_installed_extension_ids [extensions_dir: string] {
     return []
   }
 
-  ls $extensions_dir
-  | where type == dir
-  | get name
-  | each {|name| $name | path basename }
-  | sort
+  ls $extensions_dir | where type == dir | get name | each {|name| $name | path basename } | sort
 }
 
 def build_auto_install_map [ids: list<string>] {
-  $ids
-  | reduce -f {} {|id, acc| $acc | upsert $id true }
+  $ids | reduce -f {} {|id, acc| $acc | upsert $id true }
 }
 
 def normalize_extension_map [value: any] {
-  let as_record = (
-    if ($value | describe | str starts-with "record") {
-      $value
-    } else {
-      {}
-    }
-  )
-
-  $as_record
-  | transpose key value
-  | sort-by key
+  let as_record = if ($value | describe | str starts-with "record") { $value } else { {} }
+  $as_record | transpose key value | sort-by key
 }
 
 def load_settings [settings_path: string] {
@@ -100,39 +65,19 @@ def load_settings [settings_path: string] {
     return {}
   }
 
-  let raw = (open --raw $settings_path)
-
+  let raw = (openn --raw $settings_path)
   try {
     $raw | from json
   } catch {
-    error make {
-      msg: $"Failed to parse settings JSON at: ($settings_path)",
-      help: "Ensure the file contains valid JSON (without comments/trailing commas) before running this script."
-    }
-  }
-}
-
-def ensure_parent_dir [path_value: string] {
-  let parent = ($path_value | path dirname)
-  if not ($parent | path exists) {
-    mkdir $parent
-  }
-}
-
-def ensure_chezmoi_available [] {
-  try {
-    ^chezmoi --version | ignore
-  } catch {
-    error make {
-      msg: "`chezmoi` command not found",
-      help: "Install chezmoi or run with --skip-chezmoi."
+    error make --unspanned {
+      msg: $"Failed to parse settings JSON at: ($settings_path)"
+      help: "Ensure the file contains valid JSON (without comments/trailing commas) before running this command."
     }
   }
 }
 
 def zed_targets [settings_path: string] {
   let zed_dir = ($settings_path | path dirname)
-
   [
     { path: $settings_path, required: true, name: "settings.json" }
     { path: ($zed_dir | path join "keymap.json"), required: false, name: "keymap.json" }
@@ -140,18 +85,6 @@ def zed_targets [settings_path: string] {
     { path: ($zed_dir | path join "snippets"), required: false, name: "snippets/" }
     { path: ($zed_dir | path join "themes"), required: false, name: "themes/" }
   ]
-}
-
-def run_chezmoi_add [target_path: string] {
-  let result = (^chezmoi add $target_path | complete)
-  if ($result.exit_code != 0) {
-    return {
-      ok: false,
-      stderr: ($result.stderr | str trim)
-    }
-  }
-
-  { ok: true, stderr: "" }
 }
 
 def sync_targets_into_chezmoi [targets: list<any>] {
@@ -165,61 +98,50 @@ def sync_targets_into_chezmoi [targets: list<any>] {
     if not ($target_path | path exists) {
       if $required {
         $failures = ($failures + 1)
-        print $"[ERROR] Required path missing: ($target_path)"
+        tag_error $"Required path missing: ($target_path)"
       } else {
-        print $"[INFO] Skipping missing optional path: ($target_name) -> ($target_path)"
+        tag_info $"Skipping missing optional path: ($target_name) -> ($target_path)"
       }
       continue
     }
 
     let add_result = (run_chezmoi_add $target_path)
     if ($add_result.ok == true) {
-      print $"[OK] Synced into chezmoi source: ($target_path)"
+      tag_ok $"Synced into chezmoi source: ($target_path)"
     } else {
       $failures = ($failures + 1)
-      print $"[ERROR] `chezmoi add` failed for: ($target_path)"
+      tag_error $"`chezmoi add` failed for: ($target_path)"
       if (($add_result.stderr | is-empty) == false) {
-        print $"        ($add_result.stderr)"
+        print $"        (ansi red)($add_result.stderr)(ansi reset)"
       }
     }
   }
 
   if ($failures > 0) {
-    exit 1
+    error make --unspanned { msg: $"Failed syncing ($failures) Zed paths into chezmoi" }
   }
 }
 
-def main [
+# Sync installed Zed extensions into `settings.json` as `auto_install_extensions`.
+# Optionally adds Zed config paths to chezmoi source state.
+export def main [
   --dry-run (-n) # Preview changes without writing to disk.
   --settings-path (-s): string = "" # Override Zed settings path.
   --extensions-dir (-e): string = "" # Override installed extensions directory.
   --skip-chezmoi # Skip running `chezmoi add`.
 ] {
-  let resolved_settings_path = (
-    if ($settings_path | is-empty) {
-      default_settings_path
-    } else {
-      $settings_path
-    }
-  )
-
-  let resolved_extensions_dir = (
-    if ($extensions_dir | is-empty) {
-      detect_extension_dir
-    } else {
-      $extensions_dir
-    }
-  )
+  let resolved_settings_path = if ($settings_path | is-empty) { default_settings_path } else { $settings_path }
+  let resolved_extensions_dir = if ($extensions_dir | is-empty) { detect_extension_dir } else { $extensions_dir }
 
   if ($resolved_extensions_dir | is-empty) {
-    print "[ERROR] Could not detect Zed installed extensions directory."
-    print "        Pass it explicitly with --extensions-dir."
-    exit 1
+    error make --unspanned {
+      msg: "Could not detect Zed installed extensions directory."
+      help: "Pass it explicitly with --extensions-dir."
+    }
   }
 
   if not ($resolved_extensions_dir | path exists) {
-    print $"[ERROR] Extensions directory does not exist: ($resolved_extensions_dir)"
-    exit 1
+    error make --unspanned { msg: $"Extensions directory does not exist: ($resolved_extensions_dir)" }
   }
 
   let ids = (collect_installed_extension_ids $resolved_extensions_dir)
@@ -230,43 +152,40 @@ def main [
   let current_auto_install = ($settings | get auto_install_extensions? | default {})
   let updated_settings = ($settings | upsert auto_install_extensions $auto_install)
 
-  let extension_map_changed = (
-    (normalize_extension_map $current_auto_install)
-    !=
-    (normalize_extension_map $auto_install)
-  )
-
+  let extension_map_changed = ((normalize_extension_map $current_auto_install) != (normalize_extension_map $auto_install))
   let should_write_settings = ($extension_map_changed or (not $settings_exists))
 
-  print $"[INFO] Extensions dir: ($resolved_extensions_dir)"
-  print $"[INFO] Settings path:  ($resolved_settings_path)"
-  print $"[INFO] Found installed extensions: ($ids | length)"
+  tag_info $"Extensions dir: ($resolved_extensions_dir)"
+  tag_info $"Settings path:  ($resolved_settings_path)"
+  tag_info $"Found installed extensions: ($ids | length)"
 
   if ($ids | is-empty) {
-    print "[WARN] No installed extensions found; auto_install_extensions will be set to an empty object."
+    tag_warn "No installed extensions found; auto_install_extensions will be set to an empty object."
   }
 
   let targets = (zed_targets $resolved_settings_path)
 
   if $dry_run {
-    print "\n[DRY-RUN] Would set auto_install_extensions to:"
+    print ""
+    tag_dry "Would set auto_install_extensions to:"
     print ($auto_install | to json --indent 2)
 
     if $should_write_settings {
-      print "[DRY-RUN] Would write settings.json"
+      tag_dry "Would write settings.json"
     } else {
-      print "[DRY-RUN] settings.json already up to date (no write needed)"
+      tag_dry "settings.json already up to date (no write needed)"
     }
 
     if not $skip_chezmoi {
-      print "\n[DRY-RUN] Would run `chezmoi add` for existing Zed targets:"
+      print ""
+      tag_dry "Would run `chezmoi add` for existing Zed targets:"
       for target in $targets {
         if ($target.path | path exists) {
-          print $"  - ($target.path)"
+          print $"  (ansi magenta)- (ansi reset)($target.path)"
         } else if ($target.required == false) {
-          print $"  - [skip missing optional] ($target.path)"
+          print $"  (ansi yellow)- [skip missing optional] (ansi reset)($target.path)"
         } else {
-          print $"  - [error required missing] ($target.path)"
+          print $"  (ansi red)- [error required missing] (ansi reset)($target.path)"
         }
       }
     }
@@ -277,16 +196,18 @@ def main [
   if $should_write_settings {
     ensure_parent_dir $resolved_settings_path
     ($updated_settings | to json --indent 2) + "\n" | save -f $resolved_settings_path
-    print "\n[OK] Updated auto_install_extensions in settings.json"
+    print ""
+    tag_ok "Updated auto_install_extensions in settings.json"
   } else {
-    print "\n[OK] auto_install_extensions already up to date (no file changes)."
+    print ""
+    tag_ok "auto_install_extensions already up to date (no file changes)."
   }
 
   if $skip_chezmoi {
-    print "[INFO] Skipping `chezmoi add` (--skip-chezmoi)."
+    tag_info "Skipping `chezmoi add` (--skip-chezmoi)."
     return
   }
 
-  ensure_chezmoi_available
+  ensure_command_available "chezmoi" "Install chezmoi or run with --skip-chezmoi."
   sync_targets_into_chezmoi $targets
 }

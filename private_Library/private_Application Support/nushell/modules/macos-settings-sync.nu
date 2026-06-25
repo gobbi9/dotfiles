@@ -1,22 +1,15 @@
-#!/usr/bin/env nu
-
-# Sync selected macOS settings into chezmoi/1Password.
-#
-# - Keyboard shortcuts: exports com.apple.symbolichotkeys and runs `chezmoi add`.
-# - Text replacements: exports/imports only the NSUserDictionaryReplacementItems
-#   key from the global preferences domain. The extracted key plist is stored in
-#   1Password and rendered locally through a chezmoi `onepasswordRead` template.
+use shared/tags.nu [tag_info tag_ok tag_dry]
+use shared/sync-utils.nu [ensure_parent_dir ensure_command_available chezmoi_source_dir run_chezmoi_add parse_op_ref escape_assignment_key]
 
 const TEXT_REPLACEMENTS_KEY = "NSUserDictionaryReplacementItems"
 const TEXT_REPLACEMENTS_OP_REF = "op://Personal/macos-text-replacements/NSUserDictionaryReplacementItems.plist"
 const TEXT_REPLACEMENTS_TEMPLATE_REL = "private_Library/Preferences/private_NSUserDictionaryReplacementItems.plist.tmpl"
 
-
 def ensure_macos [] {
   let os_name = ($nu.os-info.name | str downcase)
   if not ($os_name | str contains "mac") {
-    error make {
-      msg: "This script only supports macOS"
+    error make --unspanned {
+      msg: "This command only supports macOS"
       help: "Run it on a macOS machine with macOS preference commands available."
     }
   }
@@ -34,43 +27,11 @@ def global_preferences_plist_path [] {
   $nu.home-dir | path join "Library" "Preferences" ".GlobalPreferences.plist"
 }
 
-def source_dir [] {
-  let detected = (try { ^chezmoi source-path | str trim } catch { "" })
-  if ($detected | is-empty) { pwd } else { $detected }
-}
-
-def ensure_parent_dir [path_value: string] {
-  let parent = ($path_value | path dirname)
-  if not ($parent | path exists) {
-    mkdir $parent
-  }
-}
-
-def ensure_command_available [command_name: string, help_text: string] {
-  try {
-    ^which $command_name | ignore
-  } catch {
-    error make { msg: $"`($command_name)` command not found", help: $help_text }
-  }
-}
-
-def ensure_chezmoi_available [] {
-  ensure_command_available "chezmoi" "Install chezmoi or run with --skip-chezmoi."
-}
-
-def ensure_op_available [] {
-  ensure_command_available "op" "Install 1Password CLI and sign in before syncing text replacements."
-}
-
-def ensure_plutil_available [] {
-  ensure_command_available "plutil" "`plutil` ships with macOS; verify your PATH and shell environment."
-}
-
 def export_defaults_domain [domain: string] {
   let result = (^defaults export $domain - | complete)
   if ($result.exit_code != 0) {
     let stderr = ($result.stderr | str trim)
-    error make {
+    error make --unspanned {
       msg: $"Failed to export defaults domain: ($domain)"
       help: (if ($stderr | is-empty) { "Check macOS defaults configuration and try again." } else { $stderr })
     }
@@ -81,41 +42,27 @@ def export_defaults_domain [domain: string] {
 
 def write_if_changed [target_path: string, content: string, label: string, dry_run: bool] {
   let target_exists = ($target_path | path exists)
-  let current = (if $target_exists { open --raw $target_path } else { "" })
+  let current = (if $target_exists { openn --raw $target_path } else { "" })
   let changed = ($content != $current)
 
   if $dry_run {
-    if $changed { print $"[DRY-RUN] Would update ($label): ($target_path)" } else { print $"[DRY-RUN] ($label) already up to date: ($target_path)" }
+    if $changed {
+      tag_dry $"Would update ($label): ($target_path)"
+    } else {
+      tag_dry $"($label) already up to date: ($target_path)"
+    }
     return $changed
   }
 
   if $changed {
     ensure_parent_dir $target_path
     $content | save -f $target_path
-    print $"[OK] Updated ($label): ($target_path)"
+    tag_ok $"Updated ($label): ($target_path)"
   } else {
-    print $"[OK] ($label) already up to date: ($target_path)"
+    tag_ok $"($label) already up to date: ($target_path)"
   }
 
   $changed
-}
-
-def run_chezmoi_add [target_path: string] {
-  let result = (^chezmoi add $target_path | complete)
-  if ($result.exit_code != 0) {
-    return { ok: false, stderr: ($result.stderr | str trim) }
-  }
-
-  { ok: true, stderr: "" }
-}
-
-def parse_op_ref [ref: string] {
-  let parsed = ($ref | parse -r '^op://(?<vault>[^/]+)/(?<item>[^/]+)/(?<field>.+)$')
-  if ($parsed | is-empty) { null } else { $parsed | first }
-}
-
-def escape_assignment_key [s: string] {
-  $s | str replace --all "\\" "\\\\" | str replace --all "." "\\." | str replace --all "=" "\\="
 }
 
 def upload_file_to_1password [op_ref: string, source_file_path: string] {
@@ -132,13 +79,13 @@ def upload_file_to_1password [op_ref: string, source_file_path: string] {
 def empty_array_plist [] {
   let tmpfile = (^mktemp | str trim)
   ^/usr/libexec/PlistBuddy -c "Clear array" $tmpfile | ignore
-  let content = (open --raw $tmpfile)
+  let content = (openn --raw $tmpfile)
   rm -f $tmpfile
   $content
 }
 
 def extract_text_replacements_key [] {
-  ensure_plutil_available
+  ensure_command_available "plutil" "`plutil` ships with macOS; verify your PATH and shell environment."
 
   let global_plist = (^mktemp | str trim)
   export_defaults_domain "-g" | save -f $global_plist
@@ -155,24 +102,24 @@ def extract_text_replacements_key [] {
     return (empty_array_plist)
   }
 
-  error make {
+  error make --unspanned {
     msg: $"Failed to extract ($TEXT_REPLACEMENTS_KEY) from global preferences"
     help: (if ($stderr | is-empty) { "Check macOS global preferences and try again." } else { $stderr })
   }
 }
 
 def import_text_replacements_key [source_key_plist_path: string, dry_run: bool] {
-  ensure_plutil_available
+  ensure_command_available "plutil" "`plutil` ships with macOS; verify your PATH and shell environment."
 
   if not ($source_key_plist_path | path exists) {
-    error make {
+    error make --unspanned {
       msg: $"Text replacements source plist does not exist: ($source_key_plist_path)"
       help: "Run `chezmoi apply` first so the 1Password template renders locally."
     }
   }
 
   if $dry_run {
-    print $"[DRY-RUN] Would write only ($TEXT_REPLACEMENTS_KEY) into ((global_preferences_plist_path))"
+    tag_dry $"Would write only ($TEXT_REPLACEMENTS_KEY) into ((global_preferences_plist_path))"
     return
   }
 
@@ -184,7 +131,7 @@ def import_text_replacements_key [source_key_plist_path: string, dry_run: bool] 
   if ($key_json_result.exit_code != 0) {
     let stderr = ($key_json_result.stderr | str trim)
     rm -f $tmp_global $tmp_json
-    error make {
+    error make --unspanned {
       msg: $"Failed to parse text replacements source plist: ($source_key_plist_path)"
       help: (if ($stderr | is-empty) { "Validate the text replacements plist and try again." } else { $stderr })
     }
@@ -194,7 +141,7 @@ def import_text_replacements_key [source_key_plist_path: string, dry_run: bool] 
   if ($global_json_result.exit_code != 0) {
     let stderr = ($global_json_result.stderr | str trim)
     rm -f $tmp_global $tmp_json
-    error make {
+    error make --unspanned {
       msg: "Failed to convert current global preferences to JSON"
       help: (if ($stderr | is-empty) { "Check macOS global preferences and try again." } else { $stderr })
     }
@@ -208,7 +155,7 @@ def import_text_replacements_key [source_key_plist_path: string, dry_run: bool] 
   if ($convert_result.exit_code != 0) {
     let stderr = ($convert_result.stderr | str trim)
     rm -f $tmp_global $tmp_json
-    error make {
+    error make --unspanned {
       msg: "Failed to convert updated global preferences to plist"
       help: (if ($stderr | is-empty) { "Validate generated global preferences JSON and try again." } else { $stderr })
     }
@@ -219,39 +166,42 @@ def import_text_replacements_key [source_key_plist_path: string, dry_run: bool] 
 
   if ($import_result.exit_code != 0) {
     let stderr = ($import_result.stderr | str trim)
-    error make {
+    error make --unspanned {
       msg: $"Failed to import updated global preferences containing ($TEXT_REPLACEMENTS_KEY)"
       help: (if ($stderr | is-empty) { "Check macOS defaults permissions and try again." } else { $stderr })
     }
   }
 
-  print $"[OK] Restored macOS text replacements key: ($TEXT_REPLACEMENTS_KEY)"
+  tag_ok $"Restored macOS text replacements key: ($TEXT_REPLACEMENTS_KEY)"
 }
 
 def sync_keyboard_shortcuts [plist_path: string, dry_run: bool, skip_chezmoi: bool] {
-  print "[INFO] Setting: macOS keyboard shortcuts"
-  print "[INFO] Domain:  com.apple.symbolichotkeys"
-  print $"[INFO] Plist:   ($plist_path)"
+  tag_info "Setting: macOS keyboard shortcuts"
+  tag_info "Domain:  com.apple.symbolichotkeys"
+  tag_info $"Plist:   ($plist_path)"
 
   let exported = (export_defaults_domain "com.apple.symbolichotkeys")
   write_if_changed $plist_path $exported "com.apple.symbolichotkeys plist" $dry_run | ignore
 
   if $skip_chezmoi {
-    print "[INFO] Skipping `chezmoi add` (--skip-chezmoi)."
+    tag_info "Skipping `chezmoi add` (--skip-chezmoi)."
     return
   }
 
   if $dry_run {
-    print $"[DRY-RUN] Would run: chezmoi add ($plist_path)"
+    tag_dry $"Would run: chezmoi add ($plist_path)"
     return
   }
 
-  ensure_chezmoi_available
+  ensure_command_available "chezmoi" "Install chezmoi or run with --skip-chezmoi."
   let add_result = (run_chezmoi_add $plist_path)
-  if ($add_result.ok == true) { print $"[OK] Synced into chezmoi source: ($plist_path)" } else {
-    print $"[ERROR] `chezmoi add` failed for: ($plist_path)"
-    if (($add_result.stderr | is-empty) == false) { print $"        ($add_result.stderr)" }
-    exit 1
+  if ($add_result.ok == true) {
+    tag_ok $"Synced into chezmoi source: ($plist_path)"
+  } else {
+    error make --unspanned {
+      msg: $"`chezmoi add` failed for: ($plist_path)"
+      help: ($add_result.stderr | default "")
+    }
   }
 }
 
@@ -260,42 +210,47 @@ def text_replacements_template_content [op_ref: string] {
 }
 
 def ensure_text_replacements_template [op_ref: string, dry_run: bool] {
-  let template_path = ((source_dir) | path join $TEXT_REPLACEMENTS_TEMPLATE_REL)
+  let template_path = ((chezmoi_source_dir) | path join $TEXT_REPLACEMENTS_TEMPLATE_REL)
   let content = (text_replacements_template_content $op_ref)
   write_if_changed $template_path $content "text replacements 1Password template" $dry_run | ignore
   $template_path
 }
 
 def sync_text_replacements [key_plist_path: string, op_ref: string, dry_run: bool, skip_1password: bool] {
-  print "[INFO] Setting: macOS text replacements"
-  print $"[INFO] Key:     ($TEXT_REPLACEMENTS_KEY)"
-  print $"[INFO] Plist:   ($key_plist_path)"
-  print $"[INFO] 1P ref:  ($op_ref)"
+  tag_info "Setting: macOS text replacements"
+  tag_info $"Key:     ($TEXT_REPLACEMENTS_KEY)"
+  tag_info $"Plist:   ($key_plist_path)"
+  tag_info $"1P ref:  ($op_ref)"
 
   let exported = (extract_text_replacements_key)
   ensure_text_replacements_template $op_ref $dry_run | ignore
   write_if_changed $key_plist_path $exported "text replacements key plist" $dry_run | ignore
 
   if $skip_1password {
-    print "[INFO] Skipping 1Password upload (--skip-1password)."
+    tag_info "Skipping 1Password upload (--skip-1password)."
     return
   }
 
   if $dry_run {
-    print $"[DRY-RUN] Would upload ($key_plist_path) to ($op_ref)"
+    tag_dry $"Would upload ($key_plist_path) to ($op_ref)"
     return
   }
 
-  ensure_op_available
+  ensure_command_available "op" "Install 1Password CLI and sign in before syncing text replacements."
   let upload = (upload_file_to_1password $op_ref $key_plist_path)
-  if ($upload.ok == true) { print $"[OK] Uploaded text replacements key plist to 1Password: ($op_ref)" } else {
-    print $"[ERROR] Failed uploading text replacements key plist to 1Password: ($op_ref)"
-    if (($upload.stderr | is-empty) == false) { print $"        ($upload.stderr)" }
-    exit 1
+  if ($upload.ok == true) {
+    tag_ok $"Uploaded text replacements key plist to 1Password: ($op_ref)"
+  } else {
+    error make --unspanned {
+      msg: $"Failed uploading text replacements key plist to 1Password: ($op_ref)"
+      help: ($upload.stderr | default "")
+    }
   }
 }
 
-def main [
+# Sync macOS keyboard shortcuts and text replacements into your dotfiles workflow.
+# Optionally uploads text replacements to 1Password and can restore them back to macOS.
+export def main [
   --dry-run (-n) # Preview changes without writing to disk or 1Password.
   --keyboard-shortcuts-plist-path: string = "" # Override keyboard shortcuts plist destination path.
   --plist-path (-p): string = "" # Backward-compatible alias for --keyboard-shortcuts-plist-path.
@@ -310,8 +265,19 @@ def main [
   ensure_macos
   ensure_command_available "defaults" "`defaults` ships with macOS; verify your PATH and shell environment."
 
-  let keyboard_path = if not ($keyboard_shortcuts_plist_path | is-empty) { $keyboard_shortcuts_plist_path } else if not ($plist_path | is-empty) { $plist_path } else { keyboard_shortcuts_plist_path }
-  let text_path = if ($text_replacements_plist_path | is-empty) { text_replacements_key_plist_path } else { $text_replacements_plist_path }
+  let keyboard_path = if not ($keyboard_shortcuts_plist_path | is-empty) {
+    $keyboard_shortcuts_plist_path
+  } else if not ($plist_path | is-empty) {
+    $plist_path
+  } else {
+    keyboard_shortcuts_plist_path
+  }
+
+  let text_path = if ($text_replacements_plist_path | is-empty) {
+    text_replacements_key_plist_path
+  } else {
+    $text_replacements_plist_path
+  }
 
   if $restore_text_replacements {
     import_text_replacements_key $text_path $dry_run
