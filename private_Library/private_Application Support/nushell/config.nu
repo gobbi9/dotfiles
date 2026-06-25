@@ -28,16 +28,16 @@ def uuid [] {
 }
 
 # ---- External custom user config files ----
-source user/env.nu     # Environment variables
-source user/aliases.nu # Aliases
+source conf/env.nu     # Environment variables
+source conf/aliases.nu # Aliases
 
 # ---- External modules ----
-use user/edit.nu *         # `edit` commands for misc config
-use user/gh-cli.nu *       # GitHub CLI wrappers
-use user/overlays.nu *     # Custom overlay management
-use user/app-icons.nu *    # App icon override helpers
-use user/touchid-sudo.nu * # Enable sudo touchID
-use user/pdf.nu *          # Pdf utilities
+use modules/edit.nu *         # `edit` commands for misc config
+use modules/gh-cli.nu *       # GitHub CLI wrappers
+use modules/overlays.nu *     # Custom overlay management
+use modules/app-icons.nu *    # App icon override helpers
+use modules/touchid-sudo.nu * # Enable sudo touchID
+use modules/pdf.nu *          # Pdf utilities
 
 # ---- Import custom functions for global use ----
 use `~/projects/mcp/generate-mcp.nu`
