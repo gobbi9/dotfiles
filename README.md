@@ -160,7 +160,7 @@ chezmoi edit iterm2.plist
 ```
 
 - Uses tab completion: `chezmoi edit <TAB>` and `chezmoi edit iterm<TAB>`
-- Opens the resolved target file in Zed via `zed-open -n`
+- Opens the resolved target file in Zed via `zed_open -n`
 
 Batch helpers:
 

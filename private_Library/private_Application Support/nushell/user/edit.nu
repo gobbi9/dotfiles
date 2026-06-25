@@ -1,6 +1,5 @@
-# open files in Zed, optionally forcing a new window
-# usage: zed-open <path> [--new(-n)]
-def zed-open [target: string, --new(-n)] {
+# Open files in Zed, optionally forcing a new window.
+export def zed_open [target: string, --new(-n)] {
   if $new {
     ^zed -n $target
   } else {
@@ -8,55 +7,55 @@ def zed-open [target: string, --new(-n)] {
   }
 }
 
-# open nushell config in Zed
-def "edit config" [--new(-n)] {
-  zed-open ($nu.config-path) --new=$new
+# Completion for mise env config names (config.<env>.toml).
+def mise_envs_completions [_context: string] {
+  ls -a ($nu.home-dir | path join ".config" "mise")
+  | where type == file
+  | get name
+  | path basename
+  | where {|n| $n =~ '^config\..+\.toml$' and $n != 'config.local.toml'}
+  | parse 'config.{env}.toml'
+  | get env
+  | uniq
+  | sort
 }
 
-# open nushell login in Zed
-def "edit login" [--new(-n)] {
-  zed-open ($nu.loginshell-path) --new=$new
+# Open Nushell config in Zed.
+export def "edit config" [--new(-n)] {
+  zed_open $nu.config-path --new=$new
 }
 
-# open nushell env in Zed (deprecated)
-def "edit env" [--new(-n)] {
-  zed-open ($nu.env-path) --new=$new
+# Open Nushell login in Zed.
+export def "edit login" [--new(-n)] {
+  zed_open $nu.loginshell-path --new=$new
 }
 
-# open starship config in Zed
-def "edit starship" [--new(-n)] {
-    zed-open $"(($env.HOME)/.config/starship.toml)" --new=$new
+# Open Nushell env in Zed (deprecated).
+export def "edit env" [--new(-n)] {
+  zed_open $nu.env-path --new=$new
 }
 
-# open zsh config in Zed
-def "edit zsh" [--new(-n)] {
-    zed-open $"(($env.HOME)/.zshrc)" --new=$new
+# Open starship config in Zed.
+export def "edit starship" [--new(-n)] {
+  zed_open ($nu.home-dir | path join ".config" "starship.toml") --new=$new
 }
 
-# edit user mise config
-def "edit mise" [--new(-n)] {
-    zed-open $"(($env.HOME)/.config/mise/config.toml)" --new=$new
+# Open zsh config in Zed.
+export def "edit zsh" [--new(-n)] {
+  zed_open ($nu.home-dir | path join ".zshrc") --new=$new
 }
 
-# edit user miserc.toml
-def "edit miserc" [--new(-n)] {
-    zed-open $"(($env.HOME)/.config/mise/miserc.toml)" --new=$new
+# Edit user mise config.
+export def "edit mise" [--new(-n)] {
+  zed_open ($nu.home-dir | path join ".config" "mise" "config.toml") --new=$new
 }
 
-# completions for mise env config names (config.<env>.toml)
-def "--mise envs" [context: string] {
-    ls -a ($env.HOME | path join ".config" "mise")
-    | where type == file
-    | get name
-    | path basename
-    | where {|n| $n =~ '^config\..+\.toml$' and $n != 'config.local.toml'}
-    | parse 'config.{env}.toml'
-    | get env
-    | uniq
-    | sort
+# Edit user miserc.toml.
+export def "edit miserc" [--new(-n)] {
+  zed_open ($nu.home-dir | path join ".config" "mise" "miserc.toml") --new=$new
 }
 
-# edit user mise env config
-def "edit mise env" [env_name: string@"--mise envs", --new(-n)] {
-    zed-open $"(($env.HOME)/.config/mise/config.($env_name).toml)" --new=$new
+# Edit user mise env config.
+export def "edit mise env" [env_name: string@mise_envs_completions, --new(-n)] {
+  zed_open ($nu.home-dir | path join ".config" "mise" $"config.($env_name).toml") --new=$new
 }
