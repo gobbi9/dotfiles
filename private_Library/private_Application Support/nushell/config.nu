@@ -31,13 +31,14 @@ def uuid [] {
 use modules/edit.nu *                # `edit` commands for misc config
 use modules/gh-cli.nu *              # GitHub CLI wrappers
 use modules/overlays.nu *            # Custom overlay management
-use modules/app-icons.nu *           # App icon override helpers
-use modules/touchid-sudo.nu *        # Enable sudo touchID
+use modules/macos-app-icons.nu *     # App icon override helpers
+use modules/macos-touchid-sudo.nu *  # Enable sudo touchID
 use modules/pdf.nu *                 # Pdf utilities
 use modules/macos-settings-sync.nu * # macOS settings sync helpers
 use modules/op-push.nu *             # Push onepasswordRead template targets into 1Password
 use modules/zed-sync.nu *            # Sync installed Zed extensions and Zed config
 use modules/loop.nu *                # Keep-awake loop helper
+use modules/chezmoi-ext.nu *         # Chezmoi helper commands
 use modules/dotfiles.nu *            # Dotfiles command hub / command discovery
 
 # ---- External custom user config files ----

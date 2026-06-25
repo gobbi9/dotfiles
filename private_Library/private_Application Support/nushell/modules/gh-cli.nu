@@ -31,6 +31,8 @@ def gh_with_owner [owner: string@gh_token_owner_completions = "personal", ...arg
   ^op signout
 }
 
+# Run GitHub CLI with a 1Password-backed token selected by owner.
+# Requires token owner as first arg (`personal` or `opensockets`).
 export def --wrapped gh [owner?: string@gh_token_owner_completions, ...args] {
   let owner_name = if $owner == null { null } else { $"($owner)" }
 

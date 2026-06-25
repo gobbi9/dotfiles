@@ -84,7 +84,7 @@ def app_icons_prepare_finder_source [icon_path: string] {
 }
 
 def app_icons_set_finder_icon [app_bundle: string, icon_path: string] {
-  let swift_script = ($nu.config-path | path dirname | path join "modules" "app-icons-set-icon.swift")
+  let swift_script = ($nu.config-path | path dirname | path join "modules" "macos-app-icons-set-icon.swift")
   if not ($swift_script | path exists) {
     error make --unspanned { msg: $"Swift helper not found: ($swift_script)" }
   }

@@ -305,6 +305,301 @@ export def "chezmoi edit" [file?: string@"nu_complete chezmoi edit_file"] {
   zed_open $target --new
 }
 
+def chezmoi_ext_source_root [] {
+  let source_root = (chezmoi_ext_source_root_or_empty)
+  if $source_root == "" {
+    error make --unspanned {
+      msg: "Failed to resolve chezmoi source root."
+    }
+  }
+
+  $source_root
+}
+
+def chezmoi_ext_history_lines [source_root: string] {
+  let result = (
+    ^git --no-pager -C $source_root log --name-status --diff-filter=DR --pretty=format: --
+    | complete
+  )
+
+  if $result.exit_code != 0 {
+    error make --unspanned {
+      msg: "Failed to read chezmoi source git history."
+      label: {
+        text: ($result.stderr | str trim)
+      }
+    }
+  }
+
+  $result.stdout
+  | lines
+  | where {|line| ($line | str trim) != "" }
+}
+
+def chezmoi_ext_history_event [line: string] {
+  let cols = ($line | split row (char tab))
+  let status = ($cols | get 0? | default "")
+
+  if (($status | str starts-with "D") and (($cols | length) >= 2)) {
+    return {
+      event: "deleted"
+      old_source_rel: ($cols | get 1)
+      new_source_rel: null
+    }
+  }
+
+  if (($status | str starts-with "R") and (($cols | length) >= 3)) {
+    return {
+      event: "renamed"
+      old_source_rel: ($cols | get 1)
+      new_source_rel: ($cols | get 2)
+    }
+  }
+
+  null
+}
+
+def chezmoi_ext_decode_source_component [part: string] {
+  mut value = $part
+
+  for prefix in ["private_" "encrypted_" "readonly_" "executable_" "create_" "modify_" "remove_" "exact_" "empty_" "literal_"] {
+    if ($value | str starts-with $prefix) {
+      let start = ($prefix | str length)
+      $value = ($value | str substring $start..)
+    }
+  }
+
+  let is_dot = ($value | str starts-with "dot_")
+  if $is_dot {
+    $value = ($value | str substring 4..)
+  }
+
+  if ($value | str ends-with ".tmpl") {
+    let end = (($value | str length) - 5)
+    $value = ($value | str substring ..$end)
+  }
+
+  if $is_dot {
+    $".($value)"
+  } else {
+    $value
+  }
+}
+
+def chezmoi_ext_source_rel_to_target_rel [source_rel: string] {
+  $source_rel
+  | split row "/"
+  | each {|part| chezmoi_ext_decode_source_component $part }
+  | str join "/"
+}
+
+def chezmoi_ext_current_target_paths [] {
+  let source_root = (chezmoi_ext_source_root)
+
+  chezmoi_ext_source_files
+  | each {|rel|
+      let source_abs = ($source_root | path join $rel)
+      let result = (^chezmoi target-path $source_abs | complete)
+      if $result.exit_code != 0 {
+        null
+      } else {
+        $result.stdout | str trim
+      }
+    }
+  | where {|path| $path != null and $path != "" }
+  | uniq
+}
+
+def chezmoi_ext_dangling_rows [] {
+  let source_root = (chezmoi_ext_source_root)
+  let events = (
+    chezmoi_ext_history_lines $source_root
+    | each {|line| chezmoi_ext_history_event $line }
+    | where {|event| $event != null }
+  )
+
+  if ($events | is-empty) {
+    return []
+  }
+
+  let old_rows = (
+    $events
+    | group-by old_source_rel
+    | transpose old_source_rel matches
+    | each {|row|
+        let renamed = ((($row.matches | where event == "renamed") | get 0?) | default null)
+        let chosen = if $renamed == null { $row.matches | first } else { $renamed }
+        let target_rel = (chezmoi_ext_source_rel_to_target_rel $row.old_source_rel)
+        let target = [$nu.home-dir $target_rel] | path join
+        {
+          kind: "file"
+          event: $chosen.event
+          source_rel: $row.old_source_rel
+          source_dir: ($row.old_source_rel | path dirname)
+          moved_to: ($chosen.new_source_rel | default "")
+          target: $target
+          target_dir: ($target | path dirname)
+          still_exists_in_home: ($target | path exists)
+        }
+      }
+  )
+
+  let stale_files = ($old_rows | where still_exists_in_home)
+
+  let current_targets = (chezmoi_ext_current_target_paths)
+
+  let stale_dirs = (
+    $old_rows
+    | group-by target_dir
+    | transpose target_dir matches
+    | each {|row|
+        let has_renamed = ($row.matches | any {|m| $m.event == "renamed" })
+        let source_dir = (($row.matches | get 0).source_dir)
+        let dir_prefix = $"($row.target_dir)/"
+        let has_current_managed = (
+          $current_targets
+          | any {|t| $t == $row.target_dir or ($t | str starts-with $dir_prefix) }
+        )
+
+        {
+          kind: "directory"
+          event: (if $has_renamed { "renamed-dir" } else { "deleted-dir" })
+          source_rel: $source_dir
+          moved_to: ""
+          target: $row.target_dir
+          exists: ($row.target_dir | path exists)
+          is_dir: (if ($row.target_dir | path exists) { (($row.target_dir | path type) == "dir") } else { false })
+          has_current_managed: $has_current_managed
+          is_home_dir: ($row.target_dir == $nu.home-dir)
+          has_source_dir: ($source_dir != "" and $source_dir != ".")
+        }
+      }
+    | where {|row| $row.exists and $row.is_dir and (not $row.has_current_managed) and (not $row.is_home_dir) and $row.has_source_dir }
+    | select kind event source_rel moved_to target
+  )
+
+  $stale_files
+  | select kind event source_rel moved_to target
+  | append $stale_dirs
+  | uniq-by kind target
+  | sort-by kind target
+}
+
+def chezmoi_ext_prune_rows [rows: table, dry_run: bool] {
+  if ($rows | is-empty) {
+    return []
+  }
+
+  let plan = (chezmoi_ext_prune_plan $rows)
+  if ($plan | is-empty) {
+    return []
+  }
+
+  if $dry_run {
+    return (
+      $plan
+      | each {|step|
+          {
+            action: "would-delete"
+            kind: $step.kind
+            target: $step.target
+          }
+        }
+    )
+  }
+
+  $plan
+  | each {|step|
+      if $step.kind == "file" {
+        if ($step.target | path exists) and (($step.target | path type) == "file") {
+          rm --force $step.target
+        }
+      } else {
+        if ($step.target | path exists) and (($step.target | path type) == "dir") {
+          rm --recursive --force $step.target
+        }
+      }
+
+      {
+        action: "deleted"
+        kind: $step.kind
+        target: $step.target
+      }
+    }
+}
+
+def chezmoi_ext_validate_prune_target [target: string] {
+  let normalized = ($target | path expand)
+  let home = ($nu.home-dir | path expand)
+  let home_prefix = $"($home)/"
+
+  if not ($normalized | str starts-with $home_prefix) {
+    error make --unspanned {
+      msg: $"Refusing to prune path outside $nu.home-dir: ($normalized)"
+    }
+  }
+
+  if $normalized == $home {
+    error make --unspanned {
+      msg: "Refusing to prune $nu.home-dir directly."
+    }
+  }
+
+  $normalized
+}
+
+def chezmoi_ext_prune_plan [rows: table] {
+  let files = (
+    $rows
+    | where kind == "file"
+    | each {|row|
+        {
+          kind: "file"
+          target: (chezmoi_ext_validate_prune_target $row.target)
+        }
+      }
+    | uniq-by target
+  )
+
+  let directories = (
+    $rows
+    | where kind == "directory"
+    | each {|row|
+        let target = (chezmoi_ext_validate_prune_target $row.target)
+        {
+          kind: "directory"
+          target: $target
+          depth: (($target | split row "/") | length)
+        }
+      }
+    | uniq-by target
+    | sort-by depth -r
+    | select kind target
+  )
+
+  $files | append $directories
+}
+
+# List dangling entries, or prune them.
+# - `chezmoi dangling` lists entries.
+# - `chezmoi dangling prune` deletes files first, then directories (deepest-first).
+# - Use `--dry-run` with `prune` to preview removals.
+export def "chezmoi dangling" [action?: string, --dry-run(-n)] {
+  let rows = (chezmoi_ext_dangling_rows)
+
+  if $action == null {
+    return $rows
+  }
+
+  if $action != "prune" {
+    error make --unspanned {
+      msg: $"Unsupported subcommand: '($action)'. Use `chezmoi dangling` or `chezmoi dangling prune`."
+    }
+  }
+
+  chezmoi_ext_prune_rows $rows $dry_run
+}
+
 # Apply all `⇡` entries reported by `chezmoi ediff` in one command.
 # Runs: `chezmoi apply -- ...<absolute destination paths>`
 export def "chezmoi up" [] {
