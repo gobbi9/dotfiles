@@ -123,11 +123,12 @@ This is effectively:
 
 > "push repo state to machine"
 
-#### Directional helper commands (Nushell extension)
+#### Directional helper commands (Nushell module)
 
-These commands are provided by the Nushell extension in:
+These commands are provided by the Nushell module:
 
-- `~/Library/Application Support/nushell/vendor/autoload/chezmoi-ext.nu`
+- `~/Library/Application Support/nushell/modules/chezmoi-ext.nu`
+- loaded from `~/Library/Application Support/nushell/config.nu`
 
 Use `chezmoi ediff` for a simple directional summary (no line hunks, templates excluded):
 
@@ -160,7 +161,7 @@ chezmoi edit iterm2.plist
 ```
 
 - Uses tab completion: `chezmoi edit <TAB>` and `chezmoi edit iterm<TAB>`
-- Opens the resolved target file in Zed via `zed_open -n`
+- Opens the resolved target file in Zed via `zed_open --new`
 
 Batch helpers:
 
@@ -310,6 +311,14 @@ chezmoi edit iterm2.plist
 chezmoi managed
 ```
 
+#### Show dangling target paths from deleted/renamed chezmoi history
+
+```bash
+chezmoi dangling
+chezmoi dangling prune --dry-run
+chezmoi dangling prune
+```
+
 #### Dry run apply
 
 ```bash
@@ -345,7 +354,6 @@ chezmoi forget "~/Library/Application Support/nushell/history.txt"
 ```text
 ~/.gitconfig
 ~/.testcontainers.properties
-~/dev.sh
 ~/.config/starship.toml
 ~/.config/gh/config.yml
 ~/.ssh/allowedSigners
@@ -403,10 +411,10 @@ Notes:
 
 Track extension IDs through `settings.json` using `auto_install_extensions`.
 
-This repo includes a helper script:
+This repo includes a Nushell command:
 
 ```text
-zed-sync.nu
+zed sync
 ```
 
 It reads currently installed Zed extensions and then does everything end-to-end:
@@ -424,10 +432,9 @@ It reads currently installed Zed extensions and then does everything end-to-end:
 
 From repo root:
 
-```bash
-cd ~/.local/share/chezmoi
-./zed-sync.nu --dry-run
-./zed-sync.nu
+```nu
+zed sync --dry-run
+zed sync
 ```
 
 Then commit/push as usual.
@@ -489,10 +496,10 @@ Migration note:
 
 ## macOS settings
 
-To track selected macOS settings, this repo includes:
+To track selected macOS settings, this repo includes the Nushell command:
 
 ```text
-macos-settings-sync.nu
+macos settings sync
 ```
 
 It syncs two settings groups:
@@ -522,17 +529,16 @@ The plaintext source path `private_Library/Preferences/private_NSUserDictionaryR
 
 From repo root:
 
-```bash
-cd ~/.local/share/chezmoi
-./macos-settings-sync.nu --dry-run
-./macos-settings-sync.nu
+```nu
+macos settings sync --dry-run
+macos settings sync
 ```
 
 You can sync only one group when needed:
 
-```bash
-./macos-settings-sync.nu --skip-text-replacements
-./macos-settings-sync.nu --skip-keyboard-shortcuts
+```nu
+macos settings sync --skip-text-replacements
+macos settings sync --skip-keyboard-shortcuts
 ```
 
 Before the first text replacement upload, create a 1Password item named `macos-text-replacements` in the `Personal` vault, or pass another file reference with `--text-replacements-op-ref`.
@@ -541,10 +547,9 @@ After changing macOS keyboard shortcuts or text replacements in System Settings,
 
 On a new Mac, run `chezmoi apply` to render the 1Password-backed key plist locally, then write only that key into macOS global preferences:
 
-```bash
-cd ~/.local/share/chezmoi
+```nu
 chezmoi apply
-./macos-settings-sync.nu --restore-text-replacements
+macos settings sync --restore-text-replacements
 ```
 
 If shortcuts or text replacements do not refresh immediately, log out/in (or reboot).
@@ -563,12 +568,11 @@ Templates like:
 
 use `onepasswordRead "op://..."` references.
 
-Important: `onepasswordRead` is read-only from chezmoi's perspective (1Password -> rendered local file). If you changed a local rendered file and want that change in 1Password, run the helper script from the repo root:
+Important: `onepasswordRead` is read-only from chezmoi's perspective (1Password -> rendered local file). If you changed a local rendered file and want that change in 1Password, run the Nushell command:
 
-```bash
-cd ~/.local/share/chezmoi
-./push-templates-to-1password.nu --dry-run
-./push-templates-to-1password.nu
+```nu
+op push --dry-run
+op push
 chezmoi apply # for tmpl files choose "overwrite" to update chezmoi state
 chezmoi diff # should not output anything
 ```
@@ -689,7 +693,6 @@ Add files:
 ```bash
 chezmoi add ~/.gitconfig
 chezmoi add ~/.testcontainers.properties
-chezmoi add ~/dev.sh
 chezmoi add ~/.config/starship.toml
 chezmoi add ~/.config/gh/config.yml
 chezmoi add ~/.ssh/allowedSigners
@@ -731,7 +734,7 @@ git cm "Setup dotfiles"
 Create GitHub repo:
 
 ```bash
-gh repo create gobbi9/dotfiles --private --source=. --remote=origin --push
+gh personal repo create gobbi9/dotfiles --private --source=. --remote=origin --push
 ```
 
 ### Recommended workflow
@@ -753,6 +756,8 @@ chezmoi re-add
 git commit
 git push
 ```
+
+Tip: run `dotfiles` (or alias `d`) in Nushell to list available dotfiles helper commands and aliases.
 
 #### Nushell ad-hoc scripts (non-interactive)
 
@@ -807,7 +812,7 @@ This is a normal Git repo and works well with editors like Zed.
 
 ---
 
-## App icon overrides (`app_icons`)
+## App icon overrides (`macos icons`)
 
 Custom app icons are loaded from:
 
@@ -827,32 +832,32 @@ If both exist for the same app name, `.png` is preferred.
 List detected icons:
 
 ```nu
-app_icons list
+macos icons list
 ```
 
 Apply one app icon:
 
 ```nu
-app_icons apply Notion
+macos icons apply Notion
 ```
 
 Apply all app icons:
 
 ```nu
-app_icons apply
+macos icons apply
 ```
 
 Preview changes without applying:
 
 ```nu
-app_icons apply --dry-run
+macos icons apply --dry-run
 ```
 
 ### Important reminder
 
 When an app is updated (for example via Homebrew, App Store, or in-app updater), its custom icon can be reset.
 
-After each app update, run `app_icons apply` again to overwrite/reapply your custom icons.
+After each app update, run `macos icons apply` again to overwrite/reapply your custom icons.
 
 Also, for visual refresh in Dock/Finder:
 
