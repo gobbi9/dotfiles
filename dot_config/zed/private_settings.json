@@ -105,7 +105,9 @@
     "dark": "Gruvbox Dark Hard"
   },
   "file_types": {
-    "Git Attributes": ["**/{git,.git,.git/info}/attributes"],
+    "Git Attributes": [
+      "**/{git,.git,.git/info}/attributes"
+    ],
     "Git Config": [
       "*.gitconfig",
       "*_gitconfig",
@@ -126,6 +128,8 @@
     "make": true,
     "nu": true,
     "rainbow-csv": true,
+    "swift": true,
+    "terraform": true,
     "toml": true,
     "xml": true
   }
