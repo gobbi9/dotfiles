@@ -1,4 +1,4 @@
-def overlay-read-lines [] {
+def overlay_read_lines [] {
   let module_path = (($env.PWD | default ".") | path join "overlay.nu")
   if not ($module_path | path exists) {
     exit 1
@@ -7,7 +7,7 @@ def overlay-read-lines [] {
   openn $module_path | lines
 }
 
-def overlay-exported-names [src_lines: list<string>] {
+def overlay_exported_names [src_lines: list<string>] {
   (
     ($src_lines
       | parse -r '^\s*export\s+def(?:\s+--[A-Za-z0-9_-]+)*\s+(?<name>"[^"]+"|[A-Za-z0-9_-]+)'
@@ -23,9 +23,9 @@ def overlay-exported-names [src_lines: list<string>] {
   )
 }
 
-def overlay-commands-indicator-command [] {
-  let src_lines = (overlay-read-lines)
-  let exported_names = (overlay-exported-names $src_lines)
+def overlay_commands_indicator_command [] {
+  let src_lines = (overlay_read_lines)
+  let exported_names = (overlay_exported_names $src_lines)
 
   if ($exported_names | is-empty) {
     exit 1

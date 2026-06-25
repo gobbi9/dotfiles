@@ -1,13 +1,13 @@
-def non-empty-lines [content: string] {
+def non_empty_lines [content: string] {
   $content | lines | where {|line| $line != ""}
 }
 
-def head-tags [] {
+def head_tags [] {
   let tags = (^git tag --points-at HEAD --sort=-creatordate)
-  non-empty-lines $tags | str join ","
+  non_empty_lines $tags | str join ","
 }
 
-def start-ref [head_tags: string] {
+def start_ref [head_tags: string] {
   if ($head_tags == "") {
     return "HEAD"
   }
@@ -20,7 +20,7 @@ def start-ref [head_tags: string] {
   ""
 }
 
-def previous-tags [start_ref: string] {
+def previous_tags [start_ref: string] {
   if ($start_ref == "") {
     return ""
   }
@@ -46,10 +46,10 @@ def previous-tags [start_ref: string] {
   }
 
   let tags = (^git tag --points-at $tag_commit --sort=-creatordate)
-  non-empty-lines $tags | str join ","
+  non_empty_lines $tags | str join ","
 }
 
-def git-tags-when [] {
+def git_tags_when [] {
   let git_repo = (^git rev-parse --is-inside-work-tree | complete)
   if $git_repo.exit_code == 0 {
     exit 0
@@ -58,10 +58,10 @@ def git-tags-when [] {
   exit 1
 }
 
-def git-tags-command [] {
-  let head_tags = (head-tags)
-  let start_ref_value = (start-ref $head_tags)
-  let prev_tags = (previous-tags $start_ref_value)
+def git_tags_command [] {
+  let head_tags = (head_tags)
+  let start_ref_value = (start_ref $head_tags)
+  let prev_tags = (previous_tags $start_ref_value)
 
   mut out = ""
   if ($prev_tags != "") {

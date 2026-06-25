@@ -807,7 +807,7 @@ This is a normal Git repo and works well with editors like Zed.
 
 ---
 
-## App icon overrides (`app-icons`)
+## App icon overrides (`app_icons`)
 
 Custom app icons are loaded from:
 
@@ -827,32 +827,32 @@ If both exist for the same app name, `.png` is preferred.
 List detected icons:
 
 ```nu
-app-icons list
+app_icons list
 ```
 
 Apply one app icon:
 
 ```nu
-app-icons apply Notion
+app_icons apply Notion
 ```
 
 Apply all app icons:
 
 ```nu
-app-icons apply
+app_icons apply
 ```
 
 Preview changes without applying:
 
 ```nu
-app-icons apply --dry-run
+app_icons apply --dry-run
 ```
 
 ### Important reminder
 
 When an app is updated (for example via Homebrew, App Store, or in-app updater), its custom icon can be reset.
 
-After each app update, run `app-icons apply` again to overwrite/reapply your custom icons.
+After each app update, run `app_icons apply` again to overwrite/reapply your custom icons.
 
 Also, for visual refresh in Dock/Finder:
 

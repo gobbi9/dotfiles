@@ -1,6 +1,6 @@
 #!/usr/bin/env nu
 
-def parse-op-ref [ref: string] {
+def parse_op_ref [ref: string] {
   let parsed = (
     $ref
     | parse -r '^op://(?<vault>[^/]+)/(?<item>[^/]+)/(?<field>.+)$'
@@ -9,7 +9,7 @@ def parse-op-ref [ref: string] {
   if ($parsed | is-empty) { null } else { $parsed | first }
 }
 
-def extract-op-refs [template_path: string] {
+def extract_op_refs [template_path: string] {
   let content = (open --raw $template_path)
   let matches = (
     $content
@@ -23,7 +23,7 @@ def extract-op-refs [template_path: string] {
   }
 }
 
-def source-dir [] {
+def source_dir [] {
   let cwd = (pwd)
 
   try {
@@ -34,7 +34,7 @@ def source-dir [] {
   }
 }
 
-def find-field-index [item_json: record, field_name: string] {
+def find_field_index [item_json: record, field_name: string] {
   let fields = ($item_json | get fields? | default [])
 
   let by_id = (
@@ -62,7 +62,7 @@ def find-field-index [item_json: record, field_name: string] {
   null
 }
 
-def file-ref-exists [item_json: record, field_name: string] {
+def file_ref_exists [item_json: record, field_name: string] {
   let files = ($item_json | get files? | default [])
 
   let by_id = (
@@ -81,14 +81,14 @@ def file-ref-exists [item_json: record, field_name: string] {
   not ($by_name | is-empty)
 }
 
-def escape-assignment-key [s: string] {
+def escape_assignment_key [s: string] {
   $s
   | str replace --all "\\" "\\\\"
   | str replace --all "." "\\."
   | str replace --all "=" "\\="
 }
 
-def update-item-field-via-template [vault: string, item: string, field_name: string, value: string, source_file_path: string] {
+def update_item_field_via_template [vault: string, item: string, field_name: string, value: string, source_file_path: string] {
   let get_result = (^op item get $item --vault $vault --format json | complete)
   if ($get_result.exit_code != 0) {
     return {
@@ -108,7 +108,7 @@ def update-item-field-via-template [vault: string, item: string, field_name: str
     }
   })
 
-  let idx = (find-field-index $item_json $field_name)
+  let idx = (find_field_index $item_json $field_name)
   if ($idx != null) {
     let updated_fields = (
       ($item_json | get fields)
@@ -146,8 +146,8 @@ def update-item-field-via-template [vault: string, item: string, field_name: str
   }
 
   # If not a standard field, it may be a file attachment referenced as op://.../filename.ext.
-  if (file-ref-exists $item_json $field_name) {
-    let escaped = (escape-assignment-key $field_name)
+  if (file_ref_exists $item_json $field_name) {
+    let escaped = (escape_assignment_key $field_name)
     let assignment = $"($escaped)[file]=($source_file_path)"
     let file_edit_result = (^op item edit $item --vault $vault $assignment | complete)
 
@@ -176,7 +176,7 @@ def update-item-field-via-template [vault: string, item: string, field_name: str
 def main [
   --dry-run (-n) # Print intended updates without changing 1Password.
 ] {
-  let src = (source-dir)
+  let src = (source_dir)
 
   if not ($src | path exists) {
     print $"[ERROR] Source path does not exist: ($src)"
@@ -213,7 +213,7 @@ def main [
     $templates_scanned = ($templates_scanned + 1)
 
     let refs = (try {
-      extract-op-refs $tmpl
+      extract_op_refs $tmpl
     } catch {
       print $"[WARN] Could not parse template: ($tmpl)"
       []
@@ -250,7 +250,7 @@ def main [
     print $"       Target:   ($target)"
 
     for ref in $refs {
-      let parsed = (parse-op-ref $ref)
+      let parsed = (parse_op_ref $ref)
       if ($parsed == null) {
         $invalid_refs = ($invalid_refs + 1)
         print $"[WARN] Unsupported ref format [expected op://vault/item/field]: ($ref)"
@@ -271,7 +271,7 @@ def main [
       # Print ref BEFORE op calls, so biometric prompts are unambiguous.
       print $"[UPDATE] ($ref) <- ($target)"
 
-      let update = (update-item-field-via-template $vault $item $field $local_content $target)
+      let update = (update_item_field_via_template $vault $item $field $local_content $target)
       if ($update.ok == true) {
         $updates_succeeded = ($updates_succeeded + 1)
         print $"[OK] Updated existing field for ($ref)"

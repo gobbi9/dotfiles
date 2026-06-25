@@ -12,7 +12,7 @@ const TEXT_REPLACEMENTS_OP_REF = "op://Personal/macos-text-replacements/NSUserDi
 const TEXT_REPLACEMENTS_TEMPLATE_REL = "private_Library/Preferences/private_NSUserDictionaryReplacementItems.plist.tmpl"
 
 
-def ensure-macos [] {
+def ensure_macos [] {
   let os_name = ($nu.os-info.name | str downcase)
   if not ($os_name | str contains "mac") {
     error make {
@@ -22,31 +22,31 @@ def ensure-macos [] {
   }
 }
 
-def keyboard-shortcuts-plist-path [] {
+def keyboard_shortcuts_plist_path [] {
   $nu.home-dir | path join "Library" "Preferences" "com.apple.symbolichotkeys.plist"
 }
 
-def text-replacements-key-plist-path [] {
+def text_replacements_key_plist_path [] {
   $nu.home-dir | path join "Library" "Preferences" "NSUserDictionaryReplacementItems.plist"
 }
 
-def global-preferences-plist-path [] {
+def global_preferences_plist_path [] {
   $nu.home-dir | path join "Library" "Preferences" ".GlobalPreferences.plist"
 }
 
-def source-dir [] {
+def source_dir [] {
   let detected = (try { ^chezmoi source-path | str trim } catch { "" })
   if ($detected | is-empty) { pwd } else { $detected }
 }
 
-def ensure-parent-dir [path_value: string] {
+def ensure_parent_dir [path_value: string] {
   let parent = ($path_value | path dirname)
   if not ($parent | path exists) {
     mkdir $parent
   }
 }
 
-def ensure-command-available [command_name: string, help_text: string] {
+def ensure_command_available [command_name: string, help_text: string] {
   try {
     ^which $command_name | ignore
   } catch {
@@ -54,19 +54,19 @@ def ensure-command-available [command_name: string, help_text: string] {
   }
 }
 
-def ensure-chezmoi-available [] {
-  ensure-command-available "chezmoi" "Install chezmoi or run with --skip-chezmoi."
+def ensure_chezmoi_available [] {
+  ensure_command_available "chezmoi" "Install chezmoi or run with --skip-chezmoi."
 }
 
-def ensure-op-available [] {
-  ensure-command-available "op" "Install 1Password CLI and sign in before syncing text replacements."
+def ensure_op_available [] {
+  ensure_command_available "op" "Install 1Password CLI and sign in before syncing text replacements."
 }
 
-def ensure-plutil-available [] {
-  ensure-command-available "plutil" "`plutil` ships with macOS; verify your PATH and shell environment."
+def ensure_plutil_available [] {
+  ensure_command_available "plutil" "`plutil` ships with macOS; verify your PATH and shell environment."
 }
 
-def export-defaults-domain [domain: string] {
+def export_defaults_domain [domain: string] {
   let result = (^defaults export $domain - | complete)
   if ($result.exit_code != 0) {
     let stderr = ($result.stderr | str trim)
@@ -79,7 +79,7 @@ def export-defaults-domain [domain: string] {
   $result.stdout
 }
 
-def write-if-changed [target_path: string, content: string, label: string, dry_run: bool] {
+def write_if_changed [target_path: string, content: string, label: string, dry_run: bool] {
   let target_exists = ($target_path | path exists)
   let current = (if $target_exists { open --raw $target_path } else { "" })
   let changed = ($content != $current)
@@ -90,7 +90,7 @@ def write-if-changed [target_path: string, content: string, label: string, dry_r
   }
 
   if $changed {
-    ensure-parent-dir $target_path
+    ensure_parent_dir $target_path
     $content | save -f $target_path
     print $"[OK] Updated ($label): ($target_path)"
   } else {
@@ -100,7 +100,7 @@ def write-if-changed [target_path: string, content: string, label: string, dry_r
   $changed
 }
 
-def run-chezmoi-add [target_path: string] {
+def run_chezmoi_add [target_path: string] {
   let result = (^chezmoi add $target_path | complete)
   if ($result.exit_code != 0) {
     return { ok: false, stderr: ($result.stderr | str trim) }
@@ -109,27 +109,27 @@ def run-chezmoi-add [target_path: string] {
   { ok: true, stderr: "" }
 }
 
-def parse-op-ref [ref: string] {
+def parse_op_ref [ref: string] {
   let parsed = ($ref | parse -r '^op://(?<vault>[^/]+)/(?<item>[^/]+)/(?<field>.+)$')
   if ($parsed | is-empty) { null } else { $parsed | first }
 }
 
-def escape-assignment-key [s: string] {
+def escape_assignment_key [s: string] {
   $s | str replace --all "\\" "\\\\" | str replace --all "." "\\." | str replace --all "=" "\\="
 }
 
-def upload-file-to-1password [op_ref: string, source_file_path: string] {
-  let parsed = (parse-op-ref $op_ref)
+def upload_file_to_1password [op_ref: string, source_file_path: string] {
+  let parsed = (parse_op_ref $op_ref)
   if ($parsed == null) {
     return { ok: false, stderr: $"Unsupported 1Password ref [expected op://vault/item/file]: ($op_ref)" }
   }
 
-  let assignment = $"((escape-assignment-key $parsed.field))[file]=($source_file_path)"
+  let assignment = $"((escape_assignment_key $parsed.field))[file]=($source_file_path)"
   let result = (^op item edit $parsed.item --vault $parsed.vault $assignment | complete)
   if ($result.exit_code == 0) { { ok: true, stderr: "" } } else { { ok: false, stderr: ($result.stderr | str trim) } }
 }
 
-def empty-array-plist [] {
+def empty_array_plist [] {
   let tmpfile = (^mktemp | str trim)
   ^/usr/libexec/PlistBuddy -c "Clear array" $tmpfile | ignore
   let content = (open --raw $tmpfile)
@@ -137,11 +137,11 @@ def empty-array-plist [] {
   $content
 }
 
-def extract-text-replacements-key [] {
-  ensure-plutil-available
+def extract_text_replacements_key [] {
+  ensure_plutil_available
 
   let global_plist = (^mktemp | str trim)
-  export-defaults-domain "-g" | save -f $global_plist
+  export_defaults_domain "-g" | save -f $global_plist
 
   let extract_result = (^plutil -extract $TEXT_REPLACEMENTS_KEY xml1 -o - $global_plist | complete)
   rm -f $global_plist
@@ -152,7 +152,7 @@ def extract-text-replacements-key [] {
 
   let stderr = ($extract_result.stderr | str trim)
   if ($stderr | str contains "Could not extract value") or ($stderr | str contains "No value at that key path") {
-    return (empty-array-plist)
+    return (empty_array_plist)
   }
 
   error make {
@@ -161,8 +161,8 @@ def extract-text-replacements-key [] {
   }
 }
 
-def import-text-replacements-key [source_key_plist_path: string, dry_run: bool] {
-  ensure-plutil-available
+def import_text_replacements_key [source_key_plist_path: string, dry_run: bool] {
+  ensure_plutil_available
 
   if not ($source_key_plist_path | path exists) {
     error make {
@@ -172,13 +172,13 @@ def import-text-replacements-key [source_key_plist_path: string, dry_run: bool] 
   }
 
   if $dry_run {
-    print $"[DRY-RUN] Would write only ($TEXT_REPLACEMENTS_KEY) into ((global-preferences-plist-path))"
+    print $"[DRY-RUN] Would write only ($TEXT_REPLACEMENTS_KEY) into ((global_preferences_plist_path))"
     return
   }
 
   let tmp_global = (^mktemp | str trim)
   let tmp_json = (^mktemp | str trim)
-  export-defaults-domain "-g" | save -f $tmp_global
+  export_defaults_domain "-g" | save -f $tmp_global
 
   let key_json_result = (^plutil -convert json -o - $source_key_plist_path | complete)
   if ($key_json_result.exit_code != 0) {
@@ -228,13 +228,13 @@ def import-text-replacements-key [source_key_plist_path: string, dry_run: bool] 
   print $"[OK] Restored macOS text replacements key: ($TEXT_REPLACEMENTS_KEY)"
 }
 
-def sync-keyboard-shortcuts [plist_path: string, dry_run: bool, skip_chezmoi: bool] {
+def sync_keyboard_shortcuts [plist_path: string, dry_run: bool, skip_chezmoi: bool] {
   print "[INFO] Setting: macOS keyboard shortcuts"
   print "[INFO] Domain:  com.apple.symbolichotkeys"
   print $"[INFO] Plist:   ($plist_path)"
 
-  let exported = (export-defaults-domain "com.apple.symbolichotkeys")
-  write-if-changed $plist_path $exported "com.apple.symbolichotkeys plist" $dry_run | ignore
+  let exported = (export_defaults_domain "com.apple.symbolichotkeys")
+  write_if_changed $plist_path $exported "com.apple.symbolichotkeys plist" $dry_run | ignore
 
   if $skip_chezmoi {
     print "[INFO] Skipping `chezmoi add` (--skip-chezmoi)."
@@ -246,8 +246,8 @@ def sync-keyboard-shortcuts [plist_path: string, dry_run: bool, skip_chezmoi: bo
     return
   }
 
-  ensure-chezmoi-available
-  let add_result = (run-chezmoi-add $plist_path)
+  ensure_chezmoi_available
+  let add_result = (run_chezmoi_add $plist_path)
   if ($add_result.ok == true) { print $"[OK] Synced into chezmoi source: ($plist_path)" } else {
     print $"[ERROR] `chezmoi add` failed for: ($plist_path)"
     if (($add_result.stderr | is-empty) == false) { print $"        ($add_result.stderr)" }
@@ -255,26 +255,26 @@ def sync-keyboard-shortcuts [plist_path: string, dry_run: bool, skip_chezmoi: bo
   }
 }
 
-def text-replacements-template-content [op_ref: string] {
+def text_replacements_template_content [op_ref: string] {
   $"{{ onepasswordRead \"($op_ref)\" }}\n"
 }
 
-def ensure-text-replacements-template [op_ref: string, dry_run: bool] {
-  let template_path = ((source-dir) | path join $TEXT_REPLACEMENTS_TEMPLATE_REL)
-  let content = (text-replacements-template-content $op_ref)
-  write-if-changed $template_path $content "text replacements 1Password template" $dry_run | ignore
+def ensure_text_replacements_template [op_ref: string, dry_run: bool] {
+  let template_path = ((source_dir) | path join $TEXT_REPLACEMENTS_TEMPLATE_REL)
+  let content = (text_replacements_template_content $op_ref)
+  write_if_changed $template_path $content "text replacements 1Password template" $dry_run | ignore
   $template_path
 }
 
-def sync-text-replacements [key_plist_path: string, op_ref: string, dry_run: bool, skip_1password: bool] {
+def sync_text_replacements [key_plist_path: string, op_ref: string, dry_run: bool, skip_1password: bool] {
   print "[INFO] Setting: macOS text replacements"
   print $"[INFO] Key:     ($TEXT_REPLACEMENTS_KEY)"
   print $"[INFO] Plist:   ($key_plist_path)"
   print $"[INFO] 1P ref:  ($op_ref)"
 
-  let exported = (extract-text-replacements-key)
-  ensure-text-replacements-template $op_ref $dry_run | ignore
-  write-if-changed $key_plist_path $exported "text replacements key plist" $dry_run | ignore
+  let exported = (extract_text_replacements_key)
+  ensure_text_replacements_template $op_ref $dry_run | ignore
+  write_if_changed $key_plist_path $exported "text replacements key plist" $dry_run | ignore
 
   if $skip_1password {
     print "[INFO] Skipping 1Password upload (--skip-1password)."
@@ -286,8 +286,8 @@ def sync-text-replacements [key_plist_path: string, op_ref: string, dry_run: boo
     return
   }
 
-  ensure-op-available
-  let upload = (upload-file-to-1password $op_ref $key_plist_path)
+  ensure_op_available
+  let upload = (upload_file_to_1password $op_ref $key_plist_path)
   if ($upload.ok == true) { print $"[OK] Uploaded text replacements key plist to 1Password: ($op_ref)" } else {
     print $"[ERROR] Failed uploading text replacements key plist to 1Password: ($op_ref)"
     if (($upload.stderr | is-empty) == false) { print $"        ($upload.stderr)" }
@@ -307,19 +307,19 @@ def main [
   --skip-chezmoi # Skip `chezmoi add` for non-sensitive files.
   --skip-1password # Skip uploading text replacements to 1Password.
 ] {
-  ensure-macos
-  ensure-command-available "defaults" "`defaults` ships with macOS; verify your PATH and shell environment."
+  ensure_macos
+  ensure_command_available "defaults" "`defaults` ships with macOS; verify your PATH and shell environment."
 
-  let keyboard_path = if not ($keyboard_shortcuts_plist_path | is-empty) { $keyboard_shortcuts_plist_path } else if not ($plist_path | is-empty) { $plist_path } else { keyboard-shortcuts-plist-path }
-  let text_path = if ($text_replacements_plist_path | is-empty) { text-replacements-key-plist-path } else { $text_replacements_plist_path }
+  let keyboard_path = if not ($keyboard_shortcuts_plist_path | is-empty) { $keyboard_shortcuts_plist_path } else if not ($plist_path | is-empty) { $plist_path } else { keyboard_shortcuts_plist_path }
+  let text_path = if ($text_replacements_plist_path | is-empty) { text_replacements_key_plist_path } else { $text_replacements_plist_path }
 
   if $restore_text_replacements {
-    import-text-replacements-key $text_path $dry_run
+    import_text_replacements_key $text_path $dry_run
     return
   }
 
   if not $skip_keyboard_shortcuts {
-    sync-keyboard-shortcuts $keyboard_path $dry_run $skip_chezmoi
+    sync_keyboard_shortcuts $keyboard_path $dry_run $skip_chezmoi
   }
 
   if not $skip_keyboard_shortcuts and not $skip_text_replacements {
@@ -327,6 +327,6 @@ def main [
   }
 
   if not $skip_text_replacements {
-    sync-text-replacements $text_path $text_replacements_op_ref $dry_run $skip_1password
+    sync_text_replacements $text_path $text_replacements_op_ref $dry_run $skip_1password
   }
 }

@@ -20,7 +20,7 @@
 #
 # Use --dry-run to preview without writing.
 
-def default-settings-path [] {
+def default_settings_path [] {
   let os_name = ($nu.os-info.name | str downcase)
   let home = $nu.home-dir
 
@@ -32,7 +32,7 @@ def default-settings-path [] {
   }
 }
 
-def extension-dir-candidates [] {
+def extension_dir_candidates [] {
   let os_name = ($nu.os-info.name | str downcase)
   let home = $nu.home-dir
 
@@ -54,8 +54,8 @@ def extension-dir-candidates [] {
   }
 }
 
-def detect-extension-dir [] {
-  for candidate in (extension-dir-candidates) {
+def detect_extension_dir [] {
+  for candidate in (extension_dir_candidates) {
     if ($candidate | path exists) {
       return $candidate
     }
@@ -64,7 +64,7 @@ def detect-extension-dir [] {
   ""
 }
 
-def collect-installed-extension-ids [extensions_dir: string] {
+def collect_installed_extension_ids [extensions_dir: string] {
   if not ($extensions_dir | path exists) {
     return []
   }
@@ -76,12 +76,12 @@ def collect-installed-extension-ids [extensions_dir: string] {
   | sort
 }
 
-def build-auto-install-map [ids: list<string>] {
+def build_auto_install_map [ids: list<string>] {
   $ids
   | reduce -f {} {|id, acc| $acc | upsert $id true }
 }
 
-def normalize-extension-map [value: any] {
+def normalize_extension_map [value: any] {
   let as_record = (
     if ($value | describe | str starts-with "record") {
       $value
@@ -95,7 +95,7 @@ def normalize-extension-map [value: any] {
   | sort-by key
 }
 
-def load-settings [settings_path: string] {
+def load_settings [settings_path: string] {
   if not ($settings_path | path exists) {
     return {}
   }
@@ -112,14 +112,14 @@ def load-settings [settings_path: string] {
   }
 }
 
-def ensure-parent-dir [path_value: string] {
+def ensure_parent_dir [path_value: string] {
   let parent = ($path_value | path dirname)
   if not ($parent | path exists) {
     mkdir $parent
   }
 }
 
-def ensure-chezmoi-available [] {
+def ensure_chezmoi_available [] {
   try {
     ^chezmoi --version | ignore
   } catch {
@@ -130,7 +130,7 @@ def ensure-chezmoi-available [] {
   }
 }
 
-def zed-targets [settings_path: string] {
+def zed_targets [settings_path: string] {
   let zed_dir = ($settings_path | path dirname)
 
   [
@@ -142,7 +142,7 @@ def zed-targets [settings_path: string] {
   ]
 }
 
-def run-chezmoi-add [target_path: string] {
+def run_chezmoi_add [target_path: string] {
   let result = (^chezmoi add $target_path | complete)
   if ($result.exit_code != 0) {
     return {
@@ -154,7 +154,7 @@ def run-chezmoi-add [target_path: string] {
   { ok: true, stderr: "" }
 }
 
-def sync-targets-into-chezmoi [targets: list<any>] {
+def sync_targets_into_chezmoi [targets: list<any>] {
   mut failures = 0
 
   for target in $targets {
@@ -172,7 +172,7 @@ def sync-targets-into-chezmoi [targets: list<any>] {
       continue
     }
 
-    let add_result = (run-chezmoi-add $target_path)
+    let add_result = (run_chezmoi_add $target_path)
     if ($add_result.ok == true) {
       print $"[OK] Synced into chezmoi source: ($target_path)"
     } else {
@@ -197,7 +197,7 @@ def main [
 ] {
   let resolved_settings_path = (
     if ($settings_path | is-empty) {
-      default-settings-path
+      default_settings_path
     } else {
       $settings_path
     }
@@ -205,7 +205,7 @@ def main [
 
   let resolved_extensions_dir = (
     if ($extensions_dir | is-empty) {
-      detect-extension-dir
+      detect_extension_dir
     } else {
       $extensions_dir
     }
@@ -222,18 +222,18 @@ def main [
     exit 1
   }
 
-  let ids = (collect-installed-extension-ids $resolved_extensions_dir)
-  let auto_install = (build-auto-install-map $ids)
+  let ids = (collect_installed_extension_ids $resolved_extensions_dir)
+  let auto_install = (build_auto_install_map $ids)
 
   let settings_exists = ($resolved_settings_path | path exists)
-  let settings = (load-settings $resolved_settings_path)
+  let settings = (load_settings $resolved_settings_path)
   let current_auto_install = ($settings | get auto_install_extensions? | default {})
   let updated_settings = ($settings | upsert auto_install_extensions $auto_install)
 
   let extension_map_changed = (
-    (normalize-extension-map $current_auto_install)
+    (normalize_extension_map $current_auto_install)
     !=
-    (normalize-extension-map $auto_install)
+    (normalize_extension_map $auto_install)
   )
 
   let should_write_settings = ($extension_map_changed or (not $settings_exists))
@@ -246,7 +246,7 @@ def main [
     print "[WARN] No installed extensions found; auto_install_extensions will be set to an empty object."
   }
 
-  let targets = (zed-targets $resolved_settings_path)
+  let targets = (zed_targets $resolved_settings_path)
 
   if $dry_run {
     print "\n[DRY-RUN] Would set auto_install_extensions to:"
@@ -275,7 +275,7 @@ def main [
   }
 
   if $should_write_settings {
-    ensure-parent-dir $resolved_settings_path
+    ensure_parent_dir $resolved_settings_path
     ($updated_settings | to json --indent 2) + "\n" | save -f $resolved_settings_path
     print "\n[OK] Updated auto_install_extensions in settings.json"
   } else {
@@ -287,6 +287,6 @@ def main [
     return
   }
 
-  ensure-chezmoi-available
-  sync-targets-into-chezmoi $targets
+  ensure_chezmoi_available
+  sync_targets_into_chezmoi $targets
 }

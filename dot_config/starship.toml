@@ -339,7 +339,7 @@ unhealthy_symbol = "󰋔"
 [custom.overlay_commands_indicator]
 description = "Show overlay commands count indicator when overlay.nu exports are present"
 when = '([($env.PWD | default ".") "overlay.nu"] | path join | path exists)'
-command = 'source ($nu.home-dir | path join ".config" "starship" "overlay_commands_indicator.nu"); overlay-commands-indicator-command'
+command = 'source ($nu.home-dir | path join ".config" "starship" "overlay_commands_indicator.nu"); overlay_commands_indicator_command'
 format = '[$output]($style) '
 style = "bright-blue"
 shell = ["/opt/homebrew/bin/nu", "-l", "-c"]
@@ -454,8 +454,8 @@ style = "bold bright-black"
 
 [custom.rust_workspace_packages]
 description = "Show all Rust workspace packages with versions"
-when = 'source ($nu.home-dir | path join ".config" "starship" "rust_workspace_packages.nu"); rust-workspace-packages-when'
-command = 'source ($nu.home-dir | path join ".config" "starship" "rust_workspace_packages.nu"); rust-workspace-packages-command'
+when = 'source ($nu.home-dir | path join ".config" "starship" "rust_workspace_packages.nu"); rust_workspace_packages_when'
+command = 'source ($nu.home-dir | path join ".config" "starship" "rust_workspace_packages.nu"); rust_workspace_packages_command'
 format = "[$output]($style) "
 style = "bold bright-black"
 ignore_timeout = true
@@ -493,8 +493,8 @@ symbol = " "
 
 [custom.gradle_root_project]
 description = "Show Gradle root project name and version"
-when = 'source ($nu.home-dir | path join ".config" "starship" "gradle_root_project.nu"); gradle-root-project-when'
-command = 'source ($nu.home-dir | path join ".config" "starship" "gradle_root_project.nu"); gradle-root-project-command'
+when = 'source ($nu.home-dir | path join ".config" "starship" "gradle_root_project.nu"); gradle_root_project_when'
+command = 'source ($nu.home-dir | path join ".config" "starship" "gradle_root_project.nu"); gradle_root_project_command'
 format = '([$output]($style)) '
 style = "bold bright-black"
 shell = ["/opt/homebrew/bin/nu", "-l", "-c"]
@@ -502,24 +502,24 @@ shell = ["/opt/homebrew/bin/nu", "-l", "-c"]
 [custom.mise_python]
 detect_extensions = ["py"]
 detect_files = [".python-version", "pyproject.toml", "requirements.txt", "requirements-dev.txt", "Pipfile", "poetry.lock", "uv.lock", "setup.py"]
-when = 'source ($nu.home-dir | path join ".config" "starship" "mise_python.nu"); mise-python-when'
-command = 'source ($nu.home-dir | path join ".config" "starship" "mise_python.nu"); mise-python-command'
+when = 'source ($nu.home-dir | path join ".config" "starship" "mise_python.nu"); mise_python_when'
+command = 'source ($nu.home-dir | path join ".config" "starship" "mise_python.nu"); mise_python_command'
 format = "[$output]($style) "
 style = "bold yellow"
 shell = ["/opt/homebrew/bin/nu", "-l", "-c"]
 
 [custom.git_tags]
 description = "Show tags on HEAD and the most recent previous tagged commit"
-when = 'source ($nu.home-dir | path join ".config" "starship" "git_tags.nu"); git-tags-when'
-command = 'source ($nu.home-dir | path join ".config" "starship" "git_tags.nu"); git-tags-command'
+when = 'source ($nu.home-dir | path join ".config" "starship" "git_tags.nu"); git_tags_when'
+command = 'source ($nu.home-dir | path join ".config" "starship" "git_tags.nu"); git_tags_command'
 format = '([$output]($style) )'
 style = "bold yellow"
 shell = ["/opt/homebrew/bin/nu", "-l", "-c"]
 
 [custom.chezmoi_diff]
 description = "Show chezmoi target/source differences"
-when = 'source ($nu.home-dir | path join (($nu.vendor-autoload-dirs | get 0) | str replace -r "^/" "") "chezmoi-ext.nu"); chezmoi-ext-starship-when'
-command = 'source ($nu.home-dir | path join (($nu.vendor-autoload-dirs | get 0) | str replace -r "^/" "") "chezmoi-ext.nu"); chezmoi-ext-starship-command'
+when = 'source ($nu.home-dir | path join (($nu.vendor-autoload-dirs | get 0) | str replace -r "^/" "") "chezmoi-ext.nu"); chezmoi_ext_starship_when'
+command = 'source ($nu.home-dir | path join (($nu.vendor-autoload-dirs | get 0) | str replace -r "^/" "") "chezmoi-ext.nu"); chezmoi_ext_starship_command'
 format = '([$output]($style) )'
 style = "bold blue"
 shell = ["/opt/homebrew/bin/nu", "-l", "-c"]
@@ -528,7 +528,7 @@ shell = ["/opt/homebrew/bin/nu", "-l", "-c"]
 description = "Kotlin version from Gradle project config"
 detect_extensions = ["kt", "kts"]
 detect_files = ["settings.gradle.kts", "settings.gradle", "build.gradle.kts", "build.gradle", "gradle/libs.versions.toml", "gradle/libs.toml"]
-command = 'source ($nu.home-dir | path join ".config" "starship" "kotlin_gradle.nu"); kotlin-gradle-command'
+command = 'source ($nu.home-dir | path join ".config" "starship" "kotlin_gradle.nu"); kotlin_gradle_command'
 format = '([$output]($style)) '
 style = "bold blue"
 shell = ["/opt/homebrew/bin/nu", "-l", "-c"]

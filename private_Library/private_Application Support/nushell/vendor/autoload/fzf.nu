@@ -49,11 +49,11 @@ export-env {
     ] | str join " "
 }
 
-def fzf-files [] {
+def fzf_files [] {
     fd --type file --strip-cwd-prefix --hidden --follow --exclude .git | fzf
 }
 
-def --env fzf-cd [] {
+def --env fzf_cd [] {
     let picked = (fd --type directory --strip-cwd-prefix --hidden --follow --exclude .git | fzf)
     if ($picked | is-not-empty) {
         cd $picked

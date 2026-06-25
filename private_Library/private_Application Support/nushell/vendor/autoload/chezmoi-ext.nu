@@ -1,4 +1,4 @@
-def chezmoi-ext-git-root-or-empty [] {
+def chezmoi_ext_git_root_or_empty [] {
   let result = (^git rev-parse --show-toplevel | complete)
   if $result.exit_code != 0 {
     return ""
@@ -7,7 +7,7 @@ def chezmoi-ext-git-root-or-empty [] {
   $result.stdout | str trim
 }
 
-def chezmoi-ext-source-root-or-empty [] {
+def chezmoi_ext_source_root_or_empty [] {
   let result = (^chezmoi source-path | complete)
   if $result.exit_code != 0 {
     return ""
@@ -16,13 +16,13 @@ def chezmoi-ext-source-root-or-empty [] {
   $result.stdout | str trim
 }
 
-def chezmoi-ext-in-source-repo [] {
-  let git_root = (chezmoi-ext-git-root-or-empty)
+def chezmoi_ext_in_source_repo [] {
+  let git_root = (chezmoi_ext_git_root_or_empty)
   if $git_root == "" {
     return false
   }
 
-  let source_root = (chezmoi-ext-source-root-or-empty)
+  let source_root = (chezmoi_ext_source_root_or_empty)
   if $source_root == "" {
     return false
   }
@@ -30,12 +30,12 @@ def chezmoi-ext-in-source-repo [] {
   (($git_root | path expand) == ($source_root | path expand))
 }
 
-def chezmoi-ext-status-result [] {
+def chezmoi_ext_status_result [] {
   ^chezmoi status --no-pager --path-style relative --exclude templates | complete
 }
 
-def chezmoi-ext-status-lines [] {
-  let result = (chezmoi-ext-status-result)
+def chezmoi_ext_status_lines [] {
+  let result = (chezmoi_ext_status_result)
   if $result.exit_code != 0 {
     error make --unspanned {
       msg: "Failed to run 'chezmoi status'."
@@ -50,7 +50,7 @@ def chezmoi-ext-status-lines [] {
   | where {|line| ($line | str trim) != "" }
 }
 
-def chezmoi-ext-entry [line: string] {
+def chezmoi_ext_entry [line: string] {
   let parsed = ($line | parse -r '^(?<filesystem>.)(?<source>.)\s+(?<path>.+)$')
   if (($parsed | length) == 0) {
     return null
@@ -71,14 +71,14 @@ def chezmoi-ext-entry [line: string] {
   null
 }
 
-def chezmoi-ext-entries [] {
-  chezmoi-ext-status-lines
-  | each {|line| chezmoi-ext-entry $line }
+def chezmoi_ext_entries [] {
+  chezmoi_ext_status_lines
+  | each {|line| chezmoi_ext_entry $line }
   | where {|entry| $entry != null }
 }
 
-def chezmoi-ext-counts [] {
-  let entries = (chezmoi-ext-entries)
+def chezmoi_ext_counts [] {
+  let entries = (chezmoi_ext_entries)
 
   {
     down: ($entries | where direction == "down" | length)
@@ -87,7 +87,7 @@ def chezmoi-ext-counts [] {
   }
 }
 
-def chezmoi-ext-target-path [path: string] {
+def chezmoi_ext_target_path [path: string] {
   if ($path | str starts-with "/") {
     return $path
   }
@@ -95,17 +95,17 @@ def chezmoi-ext-target-path [path: string] {
   [$nu.home-dir $path] | path join
 }
 
-def chezmoi-ext-paths-by-direction [direction: string] {
-  chezmoi-ext-entries
+def chezmoi_ext_paths_by_direction [direction: string] {
+  chezmoi_ext_entries
   | where direction == $direction
   | get path
-  | each {|path| chezmoi-ext-target-path $path }
+  | each {|path| chezmoi_ext_target_path $path }
 }
 
 # Starship guard: succeeds only when the current directory is the chezmoi source repo.
 # Intended for use by the custom Starship module `custom.chezmoi_diff`.
-export def "chezmoi-ext-starship-when" [] {
-  if (chezmoi-ext-in-source-repo) {
+export def "chezmoi_ext_starship_when" [] {
+  if (chezmoi_ext_in_source_repo) {
     exit 0
   }
 
@@ -117,8 +117,8 @@ export def "chezmoi-ext-starship-when" [] {
 # - Uses `chezmoi status --exclude templates` (no template fetches).
 # - ⇣ includes any entry whose first status column is set (including `MM`).
 # - ⇡ includes entries whose first column is blank and second is set.
-export def "chezmoi-ext-starship-command" [] {
-  let counts = (chezmoi-ext-counts)
+export def "chezmoi_ext_starship_command" [] {
+  let counts = (chezmoi_ext_counts)
   if $counts.total == 0 {
     exit 1
   }
@@ -126,8 +126,8 @@ export def "chezmoi-ext-starship-command" [] {
   $" !($counts.total) ⇣($counts.down) ⇡($counts.up)"
 }
 
-def chezmoi-ext-source-files [] {
-  let source_root = (chezmoi-ext-source-root-or-empty)
+def chezmoi_ext_source_files [] {
+  let source_root = (chezmoi_ext_source_root_or_empty)
   if $source_root == "" {
     return []
   }
@@ -144,8 +144,8 @@ def chezmoi-ext-source-files [] {
   | where {|relpath| not ($relpath | str starts-with ".git/") }
 }
 
-def chezmoi-ext-find-source-files [query: string] {
-  let files = (chezmoi-ext-source-files)
+def chezmoi_ext_find_source_files [query: string] {
+  let files = (chezmoi_ext_source_files)
   if ($files | is-empty) {
     return []
   }
@@ -171,7 +171,7 @@ def chezmoi-ext-find-source-files [query: string] {
   | where {|line| ($line | str trim) != "" }
 }
 
-def chezmoi-ext-completion-last-token [context: string] {
+def chezmoi_ext_completion_last_token [context: string] {
   let parsed = ($context | parse -r '(?s)^(?:.*\s)?(?<partial>\S*)$')
   if (($parsed | length) == 0) {
     return ""
@@ -182,11 +182,11 @@ def chezmoi-ext-completion-last-token [context: string] {
 
 
 
-def "nu-complete chezmoi edit file" [context: string] {
-  let partial = (chezmoi-ext-completion-last-token $context)
+def "nu_complete chezmoi edit_file" [context: string] {
+  let partial = (chezmoi_ext_completion_last_token $context)
 
   let completions = (
-    chezmoi-ext-find-source-files $partial
+    chezmoi_ext_find_source_files $partial
     | each {|relpath|
         {
           value: $relpath
@@ -215,7 +215,7 @@ def "nu-complete chezmoi edit file" [context: string] {
 # Optional index argument:
 # - `chezmoi ediff <index>` runs `chezmoi diff` for just that target path.
 export def "chezmoi ediff" [index?: int] {
-  let entries = (chezmoi-ext-entries)
+  let entries = (chezmoi_ext_entries)
   if ($entries | is-empty) {
     return
   }
@@ -228,7 +228,7 @@ export def "chezmoi ediff" [index?: int] {
     }
 
     let entry = ($entries | get $index)
-    let target = (chezmoi-ext-target-path $entry.path)
+    let target = (chezmoi_ext_target_path $entry.path)
     ^chezmoi diff -- $target
     return
   }
@@ -243,8 +243,8 @@ export def "chezmoi ediff" [index?: int] {
   | str join (char nl)
 }
 
-def chezmoi-ext-select-source-file [] {
-  let files = (chezmoi-ext-source-files)
+def chezmoi_ext_select_source_file [] {
+  let files = (chezmoi_ext_source_files)
   if ($files | is-empty) {
     error make --unspanned {
       msg: "No source files found in the chezmoi source repo."
@@ -275,12 +275,12 @@ def chezmoi-ext-select-source-file [] {
 # - `chezmoi edit` opens an interactive fzf picker over source files.
 # - Selected source path is mapped with `chezmoi target-path`.
 # - Opens target file with `zed_open --new`.
-export def "chezmoi edit" [file?: string@"nu-complete chezmoi edit file"] {
+export def "chezmoi edit" [file?: string@"nu_complete chezmoi edit_file"] {
   let source_match = (
     if $file == null or (($file | str trim) == "") {
-      chezmoi-ext-select-source-file
+      chezmoi_ext_select_source_file
     } else {
-      let matches = (chezmoi-ext-find-source-files $file)
+      let matches = (chezmoi_ext_find_source_files $file)
       if ($matches | is-empty) {
         error make --unspanned {
           msg: $"No target file matched: ($file)"
@@ -308,7 +308,7 @@ export def "chezmoi edit" [file?: string@"nu-complete chezmoi edit file"] {
 # Apply all `⇡` entries reported by `chezmoi ediff` in one command.
 # Runs: `chezmoi apply -- ...<absolute destination paths>`
 export def "chezmoi up" [] {
-  let paths = (chezmoi-ext-paths-by-direction "up")
+  let paths = (chezmoi_ext_paths_by_direction "up")
   if ($paths | is-empty) {
     return
   }
@@ -319,7 +319,7 @@ export def "chezmoi up" [] {
 # Re-add all `⇣` entries reported by `chezmoi ediff` in one command.
 # Runs: `chezmoi re-add -- ...<absolute destination paths>`
 export def "chezmoi down" [] {
-  let paths = (chezmoi-ext-paths-by-direction "down")
+  let paths = (chezmoi_ext_paths_by_direction "down")
   if ($paths | is-empty) {
     return
   }

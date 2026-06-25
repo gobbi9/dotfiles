@@ -1,4 +1,4 @@
-def mise-python-raw-version [] {
+def mise_python_raw_version [] {
   let result = (^mise current python | complete)
   if $result.exit_code != 0 {
     return ""
@@ -12,8 +12,8 @@ def mise-python-raw-version [] {
   $parsed | get 0.version | str trim
 }
 
-def mise-python-when [] {
-  let version = (mise-python-raw-version)
+def mise_python_when [] {
+  let version = (mise_python_raw_version)
   if $version == "" {
     exit 1
   }
@@ -21,8 +21,8 @@ def mise-python-when [] {
   exit 0
 }
 
-def mise-python-command [] {
-  let version = (mise-python-raw-version)
+def mise_python_command [] {
+  let version = (mise_python_raw_version)
   if $version == "" {
     exit 1
   }

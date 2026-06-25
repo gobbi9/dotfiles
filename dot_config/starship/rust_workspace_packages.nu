@@ -1,4 +1,4 @@
-def rust-workspace-packages-when [] {
+def rust_workspace_packages_when [] {
   if ((which cargo | length) > 0) {
     let cargo_locate = (^cargo locate-project --workspace --message-format plain | complete)
     if $cargo_locate.exit_code == 0 {
@@ -16,7 +16,7 @@ def rust-workspace-packages-when [] {
   exit 1
 }
 
-def cargo-metadata-result [] {
+def cargo_metadata_result [] {
   if ((which cargo | length) > 0) {
     return (^cargo metadata --no-deps --format-version 1 | complete)
   }
@@ -24,8 +24,8 @@ def cargo-metadata-result [] {
   { exit_code: 1, stdout: "", stderr: "" }
 }
 
-def rust-metadata-json [] {
-  let cargo_result = (cargo-metadata-result)
+def rust_metadata_json [] {
+  let cargo_result = (cargo_metadata_result)
   if $cargo_result.exit_code == 0 {
     return $cargo_result.stdout
   }
@@ -42,7 +42,7 @@ def rust-metadata-json [] {
   $mise_result.stdout
 }
 
-def workspace-packages [metadata] {
+def workspace_packages [metadata] {
   let members = ($metadata.workspace_members | default [])
   if (($members | length) == 0) {
     return []
@@ -59,7 +59,7 @@ def workspace-packages [metadata] {
   )
 }
 
-def group-packages-by-version [packages: list<any>] {
+def group_packages_by_version [packages: list<any>] {
   $packages
   | reduce --fold [] {|pkg, acc|
       if (($acc | length) == 0) {
@@ -77,19 +77,19 @@ def group-packages-by-version [packages: list<any>] {
     }
 }
 
-def rust-workspace-packages-command [] {
-  let metadata_json = (rust-metadata-json)
+def rust_workspace_packages_command [] {
+  let metadata_json = (rust_metadata_json)
   let metadata = (try { $metadata_json | from json } catch { null })
   if $metadata == null {
     exit 1
   }
 
-  let packages = (workspace-packages $metadata)
+  let packages = (workspace_packages $metadata)
   if (($packages | length) == 0) {
     exit 1
   }
 
-  let groups = (group-packages-by-version $packages)
+  let groups = (group_packages_by_version $packages)
   let rendered = (
     $groups
     | each {|g| $"󰏗 ($g.names | str join ' ') v($g.version)" }

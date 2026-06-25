@@ -1,4 +1,4 @@
-def kotlin-version-from-catalog [catalog_path: string] {
+def kotlin_version_from_catalog [catalog_path: string] {
   if (not ($catalog_path | path exists)) {
     return ""
   }
@@ -42,7 +42,7 @@ def kotlin-version-from-catalog [catalog_path: string] {
   ""
 }
 
-def kotlin-version-from-build-script [path: string] {
+def kotlin_version_from_build_script [path: string] {
   if (not ($path | path exists)) {
     return ""
   }
@@ -66,7 +66,7 @@ def kotlin-version-from-build-script [path: string] {
   $parsed | get 0.value
 }
 
-def catalog-path-from-settings [settings_path: string] {
+def catalog_path_from_settings [settings_path: string] {
   if not ($settings_path | path exists) {
     return ""
   }
@@ -89,9 +89,9 @@ def catalog-path-from-settings [settings_path: string] {
   $parsed | get 0.path
 }
 
-def discover-catalog-path [] {
+def discover_catalog_path [] {
   for f in ["settings.gradle.kts", "settings.gradle"] {
-    let found = (catalog-path-from-settings $f)
+    let found = (catalog_path_from_settings $f)
     if $found != "" {
       return $found
     }
@@ -100,13 +100,13 @@ def discover-catalog-path [] {
   ""
 }
 
-def kotlin-version-from-catalog-candidates [catalog: string] {
+def kotlin_version_from_catalog_candidates [catalog: string] {
   for c in [$catalog, "gradle/libs.versions.toml", "gradle/libs.toml"] {
     if $c == "" {
       continue
     }
 
-    let found = (kotlin-version-from-catalog $c)
+    let found = (kotlin_version_from_catalog $c)
     if $found != "" {
       return $found
     }
@@ -115,16 +115,16 @@ def kotlin-version-from-catalog-candidates [catalog: string] {
   ""
 }
 
-def kotlin-gradle-command [] {
-  let catalog = (discover-catalog-path)
-  mut version = (kotlin-version-from-catalog-candidates $catalog)
+def kotlin_gradle_command [] {
+  let catalog = (discover_catalog_path)
+  mut version = (kotlin_version_from_catalog_candidates $catalog)
 
   if $version == "" {
-    $version = (kotlin-version-from-build-script "build.gradle.kts")
+    $version = (kotlin_version_from_build_script "build.gradle.kts")
   }
 
   if $version == "" {
-    $version = (kotlin-version-from-build-script "build.gradle")
+    $version = (kotlin_version_from_build_script "build.gradle")
   }
 
   if $version == "" {

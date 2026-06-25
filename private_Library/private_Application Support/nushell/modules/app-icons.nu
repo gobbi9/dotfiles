@@ -149,7 +149,7 @@ def app_icons_entry_result [entry: record, dry_run: bool] {
   }
 }
 
-# Completion for `app-icons apply <app_name>`.
+# Completion for `app_icons apply <app_name>`.
 def app_icons_apply_completer [_context: string] {
   try {
     app_icons_icon_entries
@@ -159,24 +159,24 @@ def app_icons_apply_completer [_context: string] {
   }
 }
 
-# List available icon mappings from ~/.config/app-icons.
+# List available icon mappings from ~/.config/app_icons.
 #
 # Supported source formats:
 #   - <AppName>.png (preferred)
 #   - <AppName>.icns
 # If both exist, PNG is preferred.
-export def "app-icons list" [] {
+export def "app_icons list" [] {
   app_icons_icon_entries
 }
 
-# Apply custom app icon(s) from ~/.config/app-icons using Finder custom icon metadata
+# Apply custom app icon(s) from ~/.config/app_icons using Finder custom icon metadata
 # (equivalent to Get Info drag-and-drop behavior).
 #
 # Examples:
-#   app-icons apply Notion
-#   app-icons apply Notion --dry-run
-#   app-icons apply
-export def "app-icons apply" [
+#   app_icons apply Notion
+#   app_icons apply Notion --dry-run
+#   app_icons apply
+export def "app_icons apply" [
   app_name?: string@app_icons_apply_completer # Optional app name. If omitted, applies all available icons.
   --dry-run(-n) # Show what would be changed without applying icon metadata.
 ] {
