@@ -34,6 +34,7 @@ source user/pdf.nu          # Pdf utilities
 source user/edit.nu         # `edit` commands for misc config
 source user/gh-cli.nu       # GitHub CLI wrappers
 source user/overlays.nu     # Custom overlay management
+source user/app-icons.nu    # App icon override helpers
 source user/touchid-sudo.nu # Enable sudo touchID
 
 # ---- Import custom functions for global use ----

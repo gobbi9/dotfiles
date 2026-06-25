@@ -587,7 +587,7 @@ symbol = " "
 disabled = false
 format = '[$symbol]($style) '
 style = 'red'
-symbol = " "
+symbol = ""
 
 [swift]
 format = '[$symbol($version)]($style) '

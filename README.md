@@ -804,3 +804,58 @@ chezmoi source repo:
 ```
 
 This is a normal Git repo and works well with editors like Zed.
+
+---
+
+## App icon overrides (`app-icons`)
+
+Custom app icons are loaded from:
+
+```text
+~/.config/app-icons
+```
+
+Supported source files:
+
+- `<AppName>.png` (preferred)
+- `<AppName>.icns`
+
+If both exist for the same app name, `.png` is preferred.
+
+### Usage
+
+List detected icons:
+
+```nu
+app-icons list
+```
+
+Apply one app icon:
+
+```nu
+app-icons apply Notion
+```
+
+Apply all app icons:
+
+```nu
+app-icons apply
+```
+
+Preview changes without applying:
+
+```nu
+app-icons apply --dry-run
+```
+
+### Important reminder
+
+When an app is updated (for example via Homebrew, App Store, or in-app updater), its custom icon can be reset.
+
+After each app update, run `app-icons apply` again to overwrite/reapply your custom icons.
+
+Also, for visual refresh in Dock/Finder:
+
+- Close running app instances
+- Remove the app from Dock
+- Reopen the app and re-add it to Dock
