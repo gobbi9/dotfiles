@@ -124,7 +124,7 @@ def sync_targets_into_chezmoi [targets: list<any>] {
 
 # Sync installed Zed extensions into `settings.json` as `auto_install_extensions`.
 # Optionally adds Zed config paths to chezmoi source state.
-export def main [
+export def "zed sync" [
   --dry-run (-n) # Preview changes without writing to disk.
   --settings-path (-s): string = "" # Override Zed settings path.
   --extensions-dir (-e): string = "" # Override installed extensions directory.

@@ -1,5 +1,5 @@
 # Enable sudo touchID. This setting may be removed after every macOS update.
-export def enable_touchid_sudo [] {
+export def "macos touchid sudo" [] {
   let sudo_pam = "/etc/pam.d/sudo"
   let touchid_line = "auth       sufficient     pam_tid.so"
 

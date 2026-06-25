@@ -149,7 +149,7 @@ def app_icons_entry_result [entry: record, dry_run: bool] {
   }
 }
 
-# Completion for `app_icons apply <app_name>`.
+# Completion for `macos icons apply <app_name>`.
 def app_icons_apply_completer [_context: string] {
   try {
     app_icons_icon_entries
@@ -165,7 +165,7 @@ def app_icons_apply_completer [_context: string] {
 #   - <AppName>.png (preferred)
 #   - <AppName>.icns
 # If both exist, PNG is preferred.
-export def "app_icons list" [] {
+export def "macos icons list" [] {
   app_icons_icon_entries
 }
 
@@ -173,10 +173,10 @@ export def "app_icons list" [] {
 # (equivalent to Get Info drag-and-drop behavior).
 #
 # Examples:
-#   app_icons apply Notion
-#   app_icons apply Notion --dry-run
-#   app_icons apply
-export def "app_icons apply" [
+#   macos icons apply Notion
+#   macos icons apply Notion --dry-run
+#   macos icons apply
+export def "macos icons apply" [
   app_name?: string@app_icons_apply_completer # Optional app name. If omitted, applies all available icons.
   --dry-run(-n) # Show what would be changed without applying icon metadata.
 ] {

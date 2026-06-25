@@ -250,7 +250,7 @@ def sync_text_replacements [key_plist_path: string, op_ref: string, dry_run: boo
 
 # Sync macOS keyboard shortcuts and text replacements into your dotfiles workflow.
 # Optionally uploads text replacements to 1Password and can restore them back to macOS.
-export def main [
+export def "macos settings sync" [
   --dry-run (-n) # Preview changes without writing to disk or 1Password.
   --keyboard-shortcuts-plist-path: string = "" # Override keyboard shortcuts plist destination path.
   --plist-path (-p): string = "" # Backward-compatible alias for --keyboard-shortcuts-plist-path.

@@ -18,10 +18,10 @@ export def main [
   let caffeinate_job = (job spawn { ^caffeinate -i -w $runner_pid })
   tag_info $"Started caffeinate background job id=($caffeinate_job)"
 
-  loop {
+  while true {
     ^osascript -e $"tell application \"System Events\" to key code ($key_code)"
     sleep ($interval_seconds | into duration --unit sec)
   }
 
-  tag_ok "dev loop exited"
+  tag_ok "loop command exited"
 }

@@ -87,7 +87,7 @@ def update_item_field_via_template [vault: string, item: string, field_name: str
 
 # Scan chezmoi templates for `onepasswordRead` refs and push rendered target content to 1Password.
 # Supports dry-run mode for previewing planned updates.
-export def main [
+export def "op push" [
   --dry-run (-n) # Print intended updates without changing 1Password.
   --source-dir: string = "" # Override chezmoi source directory.
 ] {

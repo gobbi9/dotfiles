@@ -27,10 +27,6 @@ def uuid [] {
   ^uuidgen | str trim | str downcase
 }
 
-# ---- External custom user config files ----
-source conf/env.nu     # Environment variables
-source conf/aliases.nu # Aliases
-
 # ---- External modules ----
 use modules/edit.nu *                # `edit` commands for misc config
 use modules/gh-cli.nu *              # GitHub CLI wrappers
@@ -39,9 +35,14 @@ use modules/app-icons.nu *           # App icon override helpers
 use modules/touchid-sudo.nu *        # Enable sudo touchID
 use modules/pdf.nu *                 # Pdf utilities
 use modules/macos-settings-sync.nu * # macOS settings sync helpers
-use modules/push-to-1password.nu *   # Push onepasswordRead template targets into 1Password
+use modules/op-push.nu *             # Push onepasswordRead template targets into 1Password
 use modules/zed-sync.nu *            # Sync installed Zed extensions and Zed config
-use modules/dev.nu *                 # Keep-awake dev helper
+use modules/loop.nu *                # Keep-awake loop helper
+use modules/dotfiles.nu *            # Dotfiles command hub / command discovery
+
+# ---- External custom user config files ----
+source conf/env.nu     # Environment variables
+source conf/aliases.nu # after modules so aliases can target module commands
 
 # ---- Import custom functions for global use ----
 use `~/projects/mcp/generate-mcp.nu`
