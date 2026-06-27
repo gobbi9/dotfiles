@@ -274,7 +274,7 @@ def chezmoi_ext_select_source_file [] {
 # - `chezmoi edit <query>` picks the first filtered source match.
 # - `chezmoi edit` opens an interactive fzf picker over source files.
 # - Selected source path is mapped with `chezmoi target-path`.
-# - Opens target file with `zed_open --new`.
+# - Opens target file with `zed open --new`.
 export def "chezmoi edit" [file?: string@"nu_complete chezmoi edit_file"] {
   let source_match = (
     if $file == null or (($file | str trim) == "") {
@@ -302,7 +302,7 @@ export def "chezmoi edit" [file?: string@"nu_complete chezmoi edit_file"] {
     }
   }
 
-  zed_open $target --new
+  zed open $target --new
 }
 
 def chezmoi_ext_source_root [] {

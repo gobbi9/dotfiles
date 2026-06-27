@@ -5,56 +5,55 @@
 # - Commands are sorted by `command`.
 # - Aliases are appended after exported commands.
 
-def dotfiles_module_for_command [name: string] {
-  if ($name | str starts-with "edit ") or $name == "zed_open" {
-    return "edit"
-  }
+def dotfiles_modules_dirs [] {
+  let default_modules_dir = ([$nu.default-config-dir "modules"] | path join)
+  let loaded_modules_dir = (
+    scope modules
+    | where name == "dotfiles"
+    | get 0?.file
+    | if $in == null { null } else { $in | path dirname }
+  )
 
-  if ($name | str starts-with "macos icons ") {
-    return "macos-app-icons"
-  }
+  [$default_modules_dir $loaded_modules_dir]
+  | where {|dir| $dir != null }
+  | uniq
+}
 
-  if ($name | str starts-with "pdf ") {
-    return "pdf"
-  }
 
-  if $name == "macos touchid sudo" {
-    return "macos-touchid-sudo"
-  }
+def dotfiles_aliases_file_path [] {
+  [$nu.default-config-dir "conf" "aliases.nu"] | path join
+}
 
-  if $name == "op push" {
-    return "op-push"
-  }
 
-  if $name == "zed sync" {
-    return "zed-sync"
-  }
+def dotfiles_command_module_rows [] {
+  let modules_dirs = (dotfiles_modules_dirs)
 
-  if $name == "macos settings sync" {
-    return "macos-settings-sync"
-  }
+  scope modules
+  | where file != null
+  | where {|mod| ($mod.file | str ends-with ".nu") and ($modules_dirs | any {|dir| $mod.file | str starts-with $dir }) }
+  | each {|mod|
+      let module_name = (
+        $mod.file
+        | path basename
+        | str replace --regex '\.nu$' ''
+      )
 
-  if $name == "loop" {
-    return "loop"
-  }
+      $mod.commands
+      | each {|cmd|
+          {
+            command: $cmd.name
+            module: $module_name
+          }
+        }
+    }
+  | flatten
+}
 
-  if $name == "gh" {
-    return "gh-cli"
-  }
 
-  if $name == "i" {
-    return "overlays"
-  }
-
-  if ($name | str starts-with "chezmoi ") {
-    return "chezmoi-ext"
-  }
-
-  if $name == "dotfiles" {
-    return "dotfiles"
-  }
-
-  null
+def dotfiles_module_for_command [name: string, command_modules: list<record<command: string, module: string>>] {
+  $command_modules
+  | where command == $name
+  | get 0?.module
 }
 
 def dotfiles_first_doc_note [description?: string] {
@@ -87,10 +86,13 @@ def dotfiles_first_doc_note [description?: string] {
 }
 
 def dotfiles_module_exports [] {
+  let command_modules = (dotfiles_command_module_rows)
+
   scope commands
   | where type == custom
+  | where {|cmd| not ($cmd.name =~ '_') }
   | each {|cmd|
-      let module_name = (dotfiles_module_for_command $cmd.name)
+      let module_name = (dotfiles_module_for_command $cmd.name $command_modules)
       if $module_name == null {
         null
       } else {
@@ -104,10 +106,6 @@ def dotfiles_module_exports [] {
     }
   | where {|row| $row != null }
   | sort-by command
-}
-
-def dotfiles_aliases_file_path [] {
-  [$nu.home-dir "Library/Application Support/nushell/conf/aliases.nu"] | path join
 }
 
 def dotfiles_alias_rows [] {
