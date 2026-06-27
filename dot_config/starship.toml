@@ -518,8 +518,8 @@ shell = ["/opt/homebrew/bin/nu", "-l", "-c"]
 
 [custom.chezmoi_diff]
 description = "Show chezmoi target/source differences"
-when = 'source ($nu.home-dir | path join (($nu.vendor-autoload-dirs | get 0) | str replace -r "^/" "") "chezmoi-ext.nu"); chezmoi_ext_starship_when'
-command = 'source ($nu.home-dir | path join (($nu.vendor-autoload-dirs | get 0) | str replace -r "^/" "") "chezmoi-ext.nu"); chezmoi_ext_starship_command'
+when = 'chezmoi_ext_starship_when'
+command = 'chezmoi_ext_starship_command'
 format = '([$output]($style) )'
 style = "bold blue"
 shell = ["/opt/homebrew/bin/nu", "-l", "-c"]

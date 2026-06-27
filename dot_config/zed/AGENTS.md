@@ -67,9 +67,13 @@ alias open = ^open
 
 - Subdivide Nushell scripts into small, reusable functions/components.
 - Keep each Nushell function to a maximum of 50 lines.
-- Avoid defining public `def`s for internal helpers.
-  - For internal helper logic, prefer private helpers (for example `def "--my-helper" [...] { ... }`) **or** local closures via `let` (for example `let my_helper = {|...| ... }`) when that is cleaner.
-  - Only add public `def`s when the command is intentionally user-facing.
+- Use `snake_case` for Nushell function names.
+- Differentiate visibility with `export`:
+  - Use `export def ...` only for intentionally user-facing/public commands.
+  - Use plain `def ...` for private/internal helper functions.
+- Do **not** use `_` prefixes to indicate private functions; rely on `export` vs non-`export` visibility instead.
+- For internal helper logic, prefer private helpers (`def ...`) **or** local closures via `let` (for example `let my_helper = {|...| ... }`) when that is cleaner.
+- When refactoring `.nu` scripts, ignore auto-generated scripts (for example, files with a comment header containing the word `generated`).
 - Always create custom Nushell error messages with `--unspanned` (for example: `error make --unspanned { msg: "..." }`).
 - Validate nushell scripts for deprecation warnings, and fix any deprecated commands.
 
