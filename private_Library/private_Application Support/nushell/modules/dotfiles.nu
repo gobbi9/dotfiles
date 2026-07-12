@@ -116,7 +116,7 @@ def dotfiles_alias_rows [] {
 
   ^cat $alias_file
   | lines
-  | parse -r '^\s*alias\s+(?<name>[A-Za-z0-9_-]+)\s*=\s*(?<target>.+?)\s*$'
+  | parse -r '^\s*alias\s+(?<name>[^\s=]+)\s*=\s*(?<target>.+?)\s*$'
   | each {|row|
       {
         module: "aliases"

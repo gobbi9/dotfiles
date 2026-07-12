@@ -4,6 +4,7 @@ alias     g = git
 alias     c = pbcopy
 alias     v = pbpaste
 alias     d = dotfiles
+alias     ? = dotfiles
 alias openn = open # https://www.nushell.sh/book/configuration.html#macos-keeping-usr-bin-open-as-open
 alias  open = ^open
 alias    hl = rg --passthru --color=always -F
