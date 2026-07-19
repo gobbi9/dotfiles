@@ -515,6 +515,7 @@ It syncs two settings groups:
    - writes ~/Library/Preferences/NSUserDictionaryReplacementItems.plist (only if changed)
    - ensures private_Library/Preferences/private_NSUserDictionaryReplacementItems.plist.tmpl exists
    - uploads the extracted key plist to 1Password as op://Personal/macos-text-replacements/NSUserDictionaryReplacementItems.plist
+   - runs `chezmoi apply --force ~/Library/Preferences/NSUserDictionaryReplacementItems.plist` so the target matches the rendered template exactly
 ```
 
 Text replacements are treated as sensitive because System Settings → Keyboard → Text Replacements can contain private snippets. The repo commits only a `onepasswordRead` template for the extracted `NSUserDictionaryReplacementItems` key:
@@ -543,7 +544,7 @@ macos settings sync --skip-keyboard-shortcuts
 
 Before the first text replacement upload, create a 1Password item named `macos-text-replacements` in the `Personal` vault, or pass another file reference with `--text-replacements-op-ref`.
 
-After changing macOS keyboard shortcuts or text replacements in System Settings, re-run the script and commit.
+After changing macOS keyboard shortcuts or text replacements in System Settings, re-run the script and commit. Text replacement sync reapplies its target after uploading to 1Password, so `chezmoi diff` remains clean.
 
 On a new Mac, run `chezmoi apply` to render the 1Password-backed key plist locally, then write only that key into macOS global preferences:
 
@@ -629,7 +630,7 @@ graph TD
     N3 --> N9
     N9 --> N10["`chezmoi apply`"]
     N10 --> N10a["Open iTerm2 Settings → General → Settings\nEnable external settings and set folder to `~/.config`\nthen click `Save Now`"]
-    N10a --> N11["`cd ~/.local/share/chezmoi && git remote set-url origin git@github.com:gobbi9/dotfiles.git`"]
+    N10a --> N11["`cd ~/.local/share/chezmoi; git remote set-url origin git@github.com:gobbi9/dotfiles.git` (Nushell)"]
     N11 --> N12["Open Zed once\n(auto_install_extensions restores extensions)"]
 
     click N2 "https://brew.sh" "Homebrew installation page"

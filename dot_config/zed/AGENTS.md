@@ -49,21 +49,17 @@ Precedence:
 Use these conventions when writing or reviewing Nushell scripts:
 
 - Home directory must be accessed via `$nu.home-dir` when writing scripts, unless it is not possible otherwise.
-- Use aliases set in `~/Library/Application Support/nushell/user/aliases.nu` (this is mandatory):
+- Interactive Nushell sessions use the aliases in `~/Library/Application Support/nushell/user/aliases.nu`.
 
-```nu
-# keep MacOS 'open' as 'open', and replace Nushell's built-in 'open' with 'openn'
-alias openn = open
-alias open = ^open
-```
-
-- **Critical rule for LLMs:** in Nushell snippets, use `openn` whenever you mean Nushell's built-in `open` command (reading/parsing files, JSON, YAML, text, etc.).
-- Do **not** use plain `open` for data loading/parsing; plain `open` is intentionally aliased to macOS `open` (`^open`) and launches apps/files/URLs.
+- **Interactive commands and snippets:** use `openn` whenever you mean Nushell's built-in `open` command (reading/parsing files, JSON, YAML, text, etc.). Plain `open` intentionally launches macOS `open` (`^open`).
+- **Nushell modules and reusable `.nu` files:** do **not** use `openn` or depend on interactive aliases. Modules have their own lexical scope and may be loaded before aliases are sourced. Use Nushell's built-in `open` directly for file loading/parsing.
 - Quick examples:
-  - ✅ `openn ./data.json | get name`
-  - ✅ `openn ./README.md | lines | first 5`
-  - ✅ `open https://example.com` (launch in browser)
-  - ❌ `open ./data.json | get name` (wrong: calls macOS `open`)
+  - ✅ Interactive: `openn ./data.json | get name`
+  - ✅ Interactive: `openn ./README.md | lines | first 5`
+  - ✅ Interactive: `open https://example.com` (launch in browser)
+  - ❌ Interactive: `open ./data.json | get name` (launches macOS `open`)
+  - ✅ Module: `open --raw $file_path`
+  - ❌ Module: `openn --raw $file_path` (an interactive alias is not available)
 
 - Subdivide Nushell scripts into small, reusable functions/components.
 - Keep each Nushell function to a maximum of 50 lines.

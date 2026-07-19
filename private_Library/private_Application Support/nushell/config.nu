@@ -17,12 +17,12 @@
 # options using:
 #     config nu --doc | nu-highlight | less -R
 
-# restart Nu in-place (replaces current process; avoids nested subshell)
+# Restart Nu in-place (replaces current process; avoids nested subshell)
 def reload [] {
   exec nu
 }
 
-# uuid lowercase without newline
+# Generate an UUID lowercase without newline
 def uuid [] {
   ^uuidgen | str trim | str downcase
 }

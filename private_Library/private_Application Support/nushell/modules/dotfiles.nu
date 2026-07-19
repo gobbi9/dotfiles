@@ -1,9 +1,9 @@
 # Dotfiles command hub for discovery.
 #
 # Behavior:
-# - `dotfiles` returns exported module commands and aliases from `conf/aliases.nu`.
+# - `dotfiles` returns top-level config commands, exported module commands, and aliases from `conf/aliases.nu`.
 # - Commands are sorted by `command`.
-# - Aliases are appended after exported commands.
+# - Aliases are appended after definitions.
 
 def dotfiles_modules_dirs [] {
   let default_modules_dir = ([$nu.default-config-dir "modules"] | path join)
@@ -22,6 +22,18 @@ def dotfiles_modules_dirs [] {
 
 def dotfiles_aliases_file_path [] {
   [$nu.default-config-dir "conf" "aliases.nu"] | path join
+}
+
+
+def dotfiles_config_command_names [] {
+  if not ($nu.config-path | path exists) {
+    return []
+  }
+
+  open --raw $nu.config-path
+  | lines
+  | parse -r '^\s*def\s+(?:--env\s+)?(?<name>[^\s\[]+)'
+  | get name
 }
 
 
@@ -108,6 +120,24 @@ def dotfiles_module_exports [] {
   | sort-by command
 }
 
+def dotfiles_config_exports [] {
+  let config_command_names = (dotfiles_config_command_names)
+
+  scope commands
+  | where type == custom
+  | where {|cmd| $config_command_names | any {|name| $name == $cmd.name } }
+  | where {|cmd| not ($cmd.name =~ '_') }
+  | each {|cmd|
+      {
+        module: "config"
+        kind: "def"
+        command: $cmd.name
+        note: (dotfiles_first_doc_note $cmd.description?)
+      }
+    }
+}
+
+
 def dotfiles_alias_rows [] {
   let alias_file = (dotfiles_aliases_file_path)
   if not ($alias_file | path exists) {
@@ -129,7 +159,11 @@ def dotfiles_alias_rows [] {
 }
 
 def dotfiles_rows [] {
-  let defs = (dotfiles_module_exports)
+  let defs = (
+    (dotfiles_config_exports)
+    | append (dotfiles_module_exports)
+    | sort-by command
+  )
   let aliases = (dotfiles_alias_rows)
 
   $defs | append $aliases
@@ -137,7 +171,7 @@ def dotfiles_rows [] {
 
 # Dotfiles command hub (discoverability only).
 #
-# Returns exported module commands plus aliases from `conf/aliases.nu`.
+# Returns top-level config commands, exported module commands, and aliases from `conf/aliases.nu`.
 # Aliases are listed at the end.
 export def main [] {
   dotfiles_rows

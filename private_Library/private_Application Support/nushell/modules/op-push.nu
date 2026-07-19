@@ -1,10 +1,31 @@
 use shared/tags.nu [tag_info tag_ok tag_warn tag_error tag_dry]
-use shared/sync-utils.nu [chezmoi_source_dir parse_op_ref escape_assignment_key]
+use shared/sync-utils.nu [chezmoi_source_dir run_chezmoi_apply parse_op_ref escape_assignment_key]
 
 def extract_op_refs [template_path: string] {
-  let content = (openn --raw $template_path)
+  let content = (open --raw $template_path)
   let matches = ($content | parse -r "(?m)onepasswordRead\\s+(?:\\(\\s*)?[\"'](?<ref>op://[^\"']+)[\"']")
   if ($matches | is-empty) { [] } else { $matches | get ref | uniq }
+}
+
+def changed_target_paths [source_dir: string] {
+  let diff_result = (^chezmoi --source $source_dir diff --no-pager --color=false --use-builtin-diff | complete)
+  if ($diff_result.exit_code != 0) {
+    error make --unspanned {
+      msg: "`chezmoi diff` failed while checking changed targets"
+      help: "Run `chezmoi diff` directly to resolve the problem before running `op push`."
+    }
+  }
+
+  let headers = (
+    $diff_result.stdout
+    | lines
+    | parse -r '^diff --git a/(?<source>.+) b/(?<target>.+)$'
+  )
+  if ($headers | is-empty) {
+    return []
+  }
+
+  $headers | get target | each {|target| $nu.home-dir | path join $target } | uniq
 }
 
 def find_field_index [item_json: record, field_name: string] {
@@ -89,6 +110,7 @@ def update_item_field_via_template [vault: string, item: string, field_name: str
 # Supports dry-run mode for previewing planned updates.
 export def "op push" [
   --dry-run (-n) # Print intended updates without changing 1Password.
+  --all # Update every template instead of only templates with a changed target.
   --source-dir: string = "" # Override chezmoi source directory.
 ] {
   let src = (chezmoi_source_dir --source_dir $source_dir)
@@ -104,18 +126,29 @@ export def "op push" [
   }
 
   let templates = (glob ($src | path join "**" "*.tmpl") | where {|p| ($p | path type) == "file" })
+  let changed_targets = if $all {
+    []
+  } else {
+    tag_info "Checking changed targets with `chezmoi diff`..."
+    changed_target_paths $src
+  }
 
   mut templates_scanned = 0
+  mut templates_selected = 0
   mut templates_with_refs = 0
   mut refs_found = 0
   mut updates_planned = 0
   mut updates_succeeded = 0
   mut updates_failed = 0
+  mut applies_planned = 0
+  mut applies_succeeded = 0
+  mut applies_failed = 0
   mut missing_targets = 0
   mut invalid_refs = 0
 
   tag_info $"Source dir: ($src)"
   tag_info $"Templates found: ($templates | length)"
+  tag_info $"Scope: (if $all { 'ALL TEMPLATES' } else { 'CHANGED TARGETS' })"
   tag_info $"Mode: (if $dry_run { 'DRY-RUN' } else { 'APPLY' })"
   print ""
 
@@ -136,16 +169,24 @@ export def "op push" [
       continue
     }
 
+    if not $all and not ($changed_targets | any {|changed_target| $changed_target == $target }) {
+      continue
+    }
+    $templates_selected = ($templates_selected + 1)
+
     if not ($target | path exists) {
       $missing_targets = ($missing_targets + 1)
       tag_warn $"Missing target file: ($target) [source: ($rel)]"
       continue
     }
 
-    let local_content = (openn --raw $target)
+    let local_content = (open --raw $target)
 
     tag_info $"Template: ($rel)"
     print $"       (ansi cyan)Target:(ansi reset)   ($target)"
+
+    mut template_updates_planned = 0
+    mut template_updates_succeeded = 0
 
     for ref in $refs {
       let parsed = (parse_op_ref $ref)
@@ -160,6 +201,7 @@ export def "op push" [
       let field = $parsed.field
 
       $updates_planned = ($updates_planned + 1)
+      $template_updates_planned = ($template_updates_planned + 1)
 
       if $dry_run {
         tag_dry $"[UPDATE] ($ref) <- ($target)"
@@ -171,6 +213,7 @@ export def "op push" [
       let update = (update_item_field_via_template $vault $item $field $local_content $target)
       if ($update.ok == true) {
         $updates_succeeded = ($updates_succeeded + 1)
+        $template_updates_succeeded = ($template_updates_succeeded + 1)
         tag_ok $"Updated existing field for ($ref)"
       } else {
         $updates_failed = ($updates_failed + 1)
@@ -181,18 +224,64 @@ export def "op push" [
       }
     }
 
+    let should_apply = if $dry_run {
+      $template_updates_planned > 0
+    } else {
+      $template_updates_succeeded > 0
+    }
+
+    if $should_apply {
+      $applies_planned = ($applies_planned + 1)
+
+      if $dry_run {
+        tag_dry $"[APPLY] chezmoi apply --force ($target)"
+      } else {
+        tag_info $"[APPLY] chezmoi apply --force ($target)"
+        let apply_result = (run_chezmoi_apply $target)
+        if ($apply_result.ok == true) {
+          $applies_succeeded = ($applies_succeeded + 1)
+          tag_ok $"Synchronized chezmoi state: ($target)"
+        } else {
+          $applies_failed = ($applies_failed + 1)
+          tag_error $"`chezmoi apply` failed for: ($target)"
+          if (($apply_result.stderr | default "" | str trim | is-empty) == false) {
+            print $"        (ansi red)chezmoi stderr:(ansi reset) ($apply_result.stderr | str trim)"
+          }
+        }
+      }
+    }
+
     print ""
   }
 
-  print $"(ansi cyan_bold)Summary:(ansi reset)"
-  print $"  Templates scanned:        ($templates_scanned)"
-  print $"  Templates with refs:      ($templates_with_refs)"
-  print $"  onepasswordRead refs:     ($refs_found)"
-  print $"  Updates planned:          ($updates_planned)"
-  if not $dry_run {
-    print $"  Updates succeeded:        ($updates_succeeded)"
-    print $"  Updates failed:           ($updates_failed)"
+  let changed_target_count = ($changed_targets | length)
+  let changed_target_summary = if $all {
+    "Not checked (--all)"
+  } else {
+    $"($changed_target_count)"
   }
-  print $"  Missing target files:     ($missing_targets)"
-  print $"  Invalid ref format count: ($invalid_refs)"
+  let update_results = if $dry_run {
+    $"($updates_planned) planned"
+  } else {
+    $"($updates_planned) planned, ($updates_succeeded) succeeded, ($updates_failed) failed"
+  }
+  let apply_results = if $dry_run {
+    $"($applies_planned) planned"
+  } else {
+    $"($applies_planned) planned, ($applies_succeeded) succeeded, ($applies_failed) failed"
+  }
+  let summary = [
+    { metric: "Templates scanned", value: $"($templates_scanned)" }
+    { metric: "Templates with 1Password refs", value: $"($templates_with_refs)" }
+    { metric: "Templates selected", value: $"($templates_selected)" }
+    { metric: "Changed targets", value: $changed_target_summary }
+    { metric: "onepasswordRead refs", value: $"($refs_found)" }
+    { metric: "1Password updates", value: $update_results }
+    { metric: "chezmoi applies", value: $apply_results }
+    { metric: "Missing target files", value: $"($missing_targets)" }
+    { metric: "Invalid refs", value: $"($invalid_refs)" }
+  ]
+
+  print $"(ansi cyan_bold)Summary:(ansi reset)"
+  $summary | table --index false
 }

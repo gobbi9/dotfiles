@@ -38,6 +38,15 @@ export def run_chezmoi_add [target_path: string] {
   { ok: true, stderr: "" }
 }
 
+export def run_chezmoi_apply [target_path: string] {
+  let result = (^chezmoi apply --force $target_path | complete)
+  if ($result.exit_code != 0) {
+    return { ok: false, stderr: ($result.stderr | str trim) }
+  }
+
+  { ok: true, stderr: "" }
+}
+
 export def parse_op_ref [ref: string] {
   let parsed = ($ref | parse -r '^op://(?<vault>[^/]+)/(?<item>[^/]+)/(?<field>.+)$')
   if ($parsed | is-empty) { null } else { $parsed | first }

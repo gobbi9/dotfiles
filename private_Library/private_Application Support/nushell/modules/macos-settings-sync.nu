@@ -1,5 +1,5 @@
 use shared/tags.nu [tag_info tag_ok tag_dry]
-use shared/sync-utils.nu [ensure_parent_dir ensure_command_available chezmoi_source_dir run_chezmoi_add parse_op_ref escape_assignment_key]
+use shared/sync-utils.nu [ensure_parent_dir ensure_command_available chezmoi_source_dir run_chezmoi_add run_chezmoi_apply parse_op_ref escape_assignment_key]
 
 const TEXT_REPLACEMENTS_KEY = "NSUserDictionaryReplacementItems"
 const TEXT_REPLACEMENTS_OP_REF = "op://Personal/macos-text-replacements/NSUserDictionaryReplacementItems.plist"
@@ -42,7 +42,7 @@ def export_defaults_domain [domain: string] {
 
 def write_if_changed [target_path: string, content: string, label: string, dry_run: bool] {
   let target_exists = ($target_path | path exists)
-  let current = (if $target_exists { openn --raw $target_path } else { "" })
+  let current = (if $target_exists { open --raw $target_path } else { "" })
   let changed = ($content != $current)
 
   if $dry_run {
@@ -79,7 +79,7 @@ def upload_file_to_1password [op_ref: string, source_file_path: string] {
 def empty_array_plist [] {
   let tmpfile = (^mktemp | str trim)
   ^/usr/libexec/PlistBuddy -c "Clear array" $tmpfile | ignore
-  let content = (openn --raw $tmpfile)
+  let content = (open --raw $tmpfile)
   rm -f $tmpfile
   $content
 }
@@ -216,14 +216,18 @@ def ensure_text_replacements_template [op_ref: string, dry_run: bool] {
   $template_path
 }
 
-def sync_text_replacements [key_plist_path: string, op_ref: string, dry_run: bool, skip_1password: bool] {
+def sync_text_replacements [key_plist_path: string, op_ref: string, dry_run: bool, skip_1password: bool, skip_chezmoi: bool] {
   tag_info "Setting: macOS text replacements"
   tag_info $"Key:     ($TEXT_REPLACEMENTS_KEY)"
   tag_info $"Plist:   ($key_plist_path)"
   tag_info $"1P ref:  ($op_ref)"
 
   let exported = (extract_text_replacements_key)
-  ensure_text_replacements_template $op_ref $dry_run | ignore
+  if $skip_chezmoi {
+    tag_info "Skipping chezmoi template and state synchronization (--skip-chezmoi)."
+  } else {
+    ensure_text_replacements_template $op_ref $dry_run | ignore
+  }
   write_if_changed $key_plist_path $exported "text replacements key plist" $dry_run | ignore
 
   if $skip_1password {
@@ -233,17 +237,34 @@ def sync_text_replacements [key_plist_path: string, op_ref: string, dry_run: boo
 
   if $dry_run {
     tag_dry $"Would upload ($key_plist_path) to ($op_ref)"
+    if not $skip_chezmoi {
+      tag_dry $"Would run: chezmoi apply --force ($key_plist_path)"
+    }
     return
   }
 
   ensure_command_available "op" "Install 1Password CLI and sign in before syncing text replacements."
   let upload = (upload_file_to_1password $op_ref $key_plist_path)
-  if ($upload.ok == true) {
-    tag_ok $"Uploaded text replacements key plist to 1Password: ($op_ref)"
+  if ($upload.ok != true) {
+    error make --unspanned {
+      msg: $"Failed uploading text replacements key plist to ($op_ref)"
+      help: ($upload.stderr | default "")
+    }
+  }
+  tag_ok $"Uploaded text replacements key plist to 1Password: ($op_ref)"
+
+  if $skip_chezmoi {
+    return
+  }
+
+  ensure_command_available "chezmoi" "Install chezmoi or run with --skip-chezmoi."
+  let apply_result = (run_chezmoi_apply $key_plist_path)
+  if ($apply_result.ok == true) {
+    tag_ok $"Synchronized chezmoi state: ($key_plist_path)"
   } else {
     error make --unspanned {
-      msg: $"Failed uploading text replacements key plist to 1Password: ($op_ref)"
-      help: ($upload.stderr | default "")
+      msg: $"`chezmoi apply` failed for: ($key_plist_path)"
+      help: ($apply_result.stderr | default "")
     }
   }
 }
@@ -259,7 +280,7 @@ export def "macos settings sync" [
   --restore-text-replacements # Write the extracted text replacements plist back into macOS global preferences.
   --skip-keyboard-shortcuts # Do not sync com.apple.symbolichotkeys.
   --skip-text-replacements # Do not sync text replacements.
-  --skip-chezmoi # Skip `chezmoi add` for non-sensitive files.
+  --skip-chezmoi # Skip chezmoi source and target-state synchronization.
   --skip-1password # Skip uploading text replacements to 1Password.
 ] {
   ensure_macos
@@ -293,6 +314,6 @@ export def "macos settings sync" [
   }
 
   if not $skip_text_replacements {
-    sync_text_replacements $text_path $text_replacements_op_ref $dry_run $skip_1password
+    sync_text_replacements $text_path $text_replacements_op_ref $dry_run $skip_1password $skip_chezmoi
   }
 }
