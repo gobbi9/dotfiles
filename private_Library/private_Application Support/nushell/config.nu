@@ -27,7 +27,7 @@ def uuid [] {
   ^uuidgen | str trim | str downcase
 }
 
-# ---- External modules ----
+# External modules
 use modules/edit.nu *                # `edit` commands for misc config
 use modules/gh-cli.nu *              # GitHub CLI wrappers
 use modules/overlays.nu *            # Custom overlay management
@@ -41,11 +41,10 @@ use modules/loop.nu *                # Keep-awake loop helper
 use modules/chezmoi-ext.nu *         # Chezmoi helper commands
 use modules/dotfiles.nu *            # Dotfiles command hub / command discovery
 
-# ---- External custom user config files ----
-source conf/env.nu     # Environment variables
-source conf/aliases.nu # after modules so aliases can target module commands
+# External custom user config files
+source conf/env.nu                   # Environment variables
+source conf/aliases.nu               # Aliases, set after modules they can target module commands
 
-# ---- Import custom functions for global use ----
-use `~/projects/mcp/generate-mcp.nu`
-use `~/projects/mcp/mcp-install.nu`
-use `~/projects/scans/scans`
+# Import custom functions for global use
+use `~/projects/mcp/mcp.nu` *        # Local MCP infrastructure: `mcp install` and `mcp generate`
+use `~/projects/scans/scans`         # Pdf splitting and tagging

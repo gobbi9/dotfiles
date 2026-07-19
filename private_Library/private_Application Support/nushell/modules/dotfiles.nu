@@ -1,11 +1,11 @@
 # Dotfiles command hub for discovery.
 #
 # Behavior:
-# - `dotfiles` returns top-level config commands, exported module commands, and aliases from `conf/aliases.nu`.
+# - `dotfiles` returns top-level config commands, exported module commands (including loaded `~/projects` modules), and aliases from `conf/aliases.nu`.
 # - Commands are sorted by `command`.
 # - Aliases are appended after definitions.
 
-def dotfiles_modules_dirs [] {
+def dotfiles_module_dirs [] {
   let default_modules_dir = ([$nu.default-config-dir "modules"] | path join)
   let loaded_modules_dir = (
     scope modules
@@ -13,8 +13,9 @@ def dotfiles_modules_dirs [] {
     | get 0?.file
     | if $in == null { null } else { $in | path dirname }
   )
+  let projects_dir = ([$nu.home-dir "projects"] | path join)
 
-  [$default_modules_dir $loaded_modules_dir]
+  [$default_modules_dir $loaded_modules_dir $projects_dir]
   | where {|dir| $dir != null }
   | uniq
 }
@@ -38,23 +39,17 @@ def dotfiles_config_command_names [] {
 
 
 def dotfiles_command_module_rows [] {
-  let modules_dirs = (dotfiles_modules_dirs)
+  let module_dirs = (dotfiles_module_dirs)
 
   scope modules
   | where file != null
-  | where {|mod| ($mod.file | str ends-with ".nu") and ($modules_dirs | any {|dir| $mod.file | str starts-with $dir }) }
+  | where {|mod| ($mod.file | str ends-with ".nu") and ($module_dirs | any {|dir| $mod.file | str starts-with $dir }) }
   | each {|mod|
-      let module_name = (
-        $mod.file
-        | path basename
-        | str replace --regex '\.nu$' ''
-      )
-
       $mod.commands
       | each {|cmd|
           {
             command: $cmd.name
-            module: $module_name
+            module: $mod.name
           }
         }
     }
