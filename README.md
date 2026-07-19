@@ -620,22 +620,47 @@ Verified for this repo:
 
 ```mermaid
 graph TD
-    N1["**Manual**: `xcode-select --install`\n(git becomes usable)"] --> N2["**Manual**: install Homebrew"]
-    N1 --> N3["**Manual**: install 1Password for macOS"]
-    N2 --> N4["`git clone https://github.com/gobbi9/dotfiles.git ~/.local/share/chezmoi`"]
-    N4 --> N6["`cd ~/.local/share/chezmoi && brew bundle`"]
-    N6 --> N7["`echo /opt/homebrew/bin/nu | sudo tee -a /etc/shells && chsh -s /opt/homebrew/bin/nu`"]
-    N7 --> N8["**Manual**: log out and log back in\n(required for login shell change)"]
-    N8 --> N9["`op signin`"]
+    N1["Manual: install Xcode Command Line Tools"] --> N2["Manual: install Homebrew"]
+    N1 --> N3["Manual: install 1Password for macOS"]
+    N2 --> N4["Clone the dotfiles repository"]
+    N4 --> N6["Run brew bundle from the repository"]
+    N6 --> N7["Set Nushell as the login shell"]
+    N7 --> N8["Manual: log out and log back in"]
+    N8 --> N9["Sign in to 1Password CLI"]
     N3 --> N9
-    N9 --> N10["`chezmoi apply`"]
-    N10 --> N10a["Open iTerm2 Settings → General → Settings\nEnable external settings and set folder to `~/.config`\nthen click `Save Now`"]
-    N10a --> N11["`cd ~/.local/share/chezmoi; git remote set-url origin git@github.com:gobbi9/dotfiles.git` (Nushell)"]
-    N11 --> N12["Open Zed once\n(auto_install_extensions restores extensions)"]
+    N9 --> N10["Apply chezmoi configuration"]
+    N10 --> N10a["Configure iTerm2 external settings"]
+    N10a --> N11["Switch the Git remote to SSH in Nushell"]
+    N11 --> N12["Open Zed to restore extensions"]
 
     click N2 "https://brew.sh" "Homebrew installation page"
     click N3 "https://1password.com/downloads/mac/" "1Password for macOS download"
 ```
+
+#### Commands referenced in the diagram
+
+```sh
+# Manual: install Xcode Command Line Tools, to install Git
+xcode-select --install
+# Manual: install Homebrew
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+# Clone the dotfiles repository
+git clone https://github.com/gobbi9/dotfiles.git ~/.local/share/chezmoi
+# Run brew bundle from the repository
+cd ~/.local/share/chezmoi
+brew bundle
+# Set Nushell as the login shell
+echo /opt/homebrew/bin/nu | sudo tee -a /etc/shells
+chsh -s /opt/homebrew/bin/nu
+# Sign in to 1Password CLI
+op signin
+# Apply chezmoi configuration
+chezmoi apply
+# Switch the Git remote to SSH
+git remote set-url origin git@github.com:gobbi9/dotfiles.git
+```
+
+After `chezmoi apply`, open iTerm2 **Settings → General → Settings**, enable external settings, set its folder to `~/.config`, then select **Save Now**. Log out and back in after changing the login shell. Open Zed once to let `auto_install_extensions` restore extensions.
 
 Note: `git clone https://...` keeps full git history; the later `git remote set-url` step only switches `origin` from HTTPS to SSH.
 
