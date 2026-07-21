@@ -6,7 +6,7 @@ const TEXT_REPLACEMENTS_OP_REF = "op://Personal/macos-text-replacements/NSUserDi
 const TEXT_REPLACEMENTS_TEMPLATE_REL = "private_Library/Preferences/private_NSUserDictionaryReplacementItems.plist.tmpl"
 
 def ensure_macos [] {
-  let os_name = ($nu.os-info.name | str downcase)
+  let os_name = ($nu.os-info.name | str lowercase)
   if not ($os_name | str contains "mac") {
     error make --unspanned {
       msg: "This command only supports macOS"
@@ -108,6 +108,63 @@ def extract_text_replacements_key [] {
   }
 }
 
+def reload_keyboard_shortcuts [] {
+  # SystemUIServer reads symbolic hotkeys at launch and does not reliably
+  # observe a defaults-domain import while it is already running.
+  let result = (^killall SystemUIServer | complete)
+  if ($result.exit_code == 0) {
+    tag_ok "Restarted SystemUIServer to reload keyboard shortcuts"
+    return
+  }
+
+  let stderr = ($result.stderr | str trim)
+  if not ($stderr | str contains "No matching processes") {
+    error make --unspanned {
+      msg: "Failed to restart SystemUIServer after restoring keyboard shortcuts"
+      help: (if ($stderr | is-empty) { "Log out and back in to reload keyboard shortcuts." } else { $stderr })
+    }
+  }
+
+  tag_info "SystemUIServer was not running; keyboard shortcuts will load when it starts."
+}
+
+def import_keyboard_shortcuts [source_plist_path: string, dry_run: bool] {
+  ensure_command_available "plutil" "`plutil` ships with macOS; verify your PATH and shell environment."
+
+  if not ($source_plist_path | path exists) {
+    error make --unspanned {
+      msg: $"Keyboard shortcuts source plist does not exist: ($source_plist_path)"
+      help: "Run `chezmoi apply` first so the managed plist is rendered locally."
+    }
+  }
+
+  let validation = (^plutil -lint $source_plist_path | complete)
+  if ($validation.exit_code != 0) {
+    let stderr = ($validation.stderr | str trim)
+    error make --unspanned {
+      msg: $"Failed to parse keyboard shortcuts source plist: ($source_plist_path)"
+      help: (if ($stderr | is-empty) { "Validate the keyboard shortcuts plist and try again." } else { $stderr })
+    }
+  }
+
+  if $dry_run {
+    tag_dry $"Would import com.apple.symbolichotkeys from ($source_plist_path)"
+    return
+  }
+
+  let import_result = (^defaults import com.apple.symbolichotkeys $source_plist_path | complete)
+  if ($import_result.exit_code != 0) {
+    let stderr = ($import_result.stderr | str trim)
+    error make --unspanned {
+      msg: $"Failed to import macOS keyboard shortcuts from: ($source_plist_path)"
+      help: (if ($stderr | is-empty) { "Check macOS defaults permissions and try again." } else { $stderr })
+    }
+  }
+
+  tag_ok "Restored macOS keyboard shortcuts: com.apple.symbolichotkeys"
+  reload_keyboard_shortcuts
+}
+
 def import_text_replacements_key [source_key_plist_path: string, dry_run: bool] {
   ensure_command_available "plutil" "`plutil` ships with macOS; verify your PATH and shell environment."
 
@@ -123,46 +180,33 @@ def import_text_replacements_key [source_key_plist_path: string, dry_run: bool] 
     return
   }
 
-  let tmp_global = (^mktemp | str trim)
-  let tmp_json = (^mktemp | str trim)
-  export_defaults_domain "-g" | save -f $tmp_global
-
-  let key_json_result = (^plutil -convert json -o - $source_key_plist_path | complete)
-  if ($key_json_result.exit_code != 0) {
-    let stderr = ($key_json_result.stderr | str trim)
-    rm -f $tmp_global $tmp_json
+  let source_validation = (^plutil -lint $source_key_plist_path | complete)
+  if ($source_validation.exit_code != 0) {
+    let stderr = ($source_validation.stderr | str trim)
     error make --unspanned {
       msg: $"Failed to parse text replacements source plist: ($source_key_plist_path)"
       help: (if ($stderr | is-empty) { "Validate the text replacements plist and try again." } else { $stderr })
     }
   }
 
-  let global_json_result = (^plutil -convert json -o - $tmp_global | complete)
-  if ($global_json_result.exit_code != 0) {
-    let stderr = ($global_json_result.stderr | str trim)
-    rm -f $tmp_global $tmp_json
-    error make --unspanned {
-      msg: "Failed to convert current global preferences to JSON"
-      help: (if ($stderr | is-empty) { "Check macOS global preferences and try again." } else { $stderr })
-    }
-  }
+  # Keep the global domain in its native plist representation: macOS may store
+  # dates or data values there, neither of which can be converted to JSON.
+  let tmp_global = (^mktemp | str trim)
+  export_defaults_domain "-g" | save -f $tmp_global
 
-  let key_value = ($key_json_result.stdout | from json)
-  let global_value = ($global_json_result.stdout | from json)
-  ($global_value | upsert $TEXT_REPLACEMENTS_KEY $key_value | to json) | save -f $tmp_json
-
-  let convert_result = (^plutil -convert xml1 -o $tmp_global $tmp_json | complete)
-  if ($convert_result.exit_code != 0) {
-    let stderr = ($convert_result.stderr | str trim)
-    rm -f $tmp_global $tmp_json
+  let source_xml = (open --raw $source_key_plist_path)
+  let update_result = (^plutil -replace $TEXT_REPLACEMENTS_KEY -xml $source_xml $tmp_global | complete)
+  if ($update_result.exit_code != 0) {
+    let stderr = ($update_result.stderr | str trim)
+    rm -f $tmp_global
     error make --unspanned {
-      msg: "Failed to convert updated global preferences to plist"
-      help: (if ($stderr | is-empty) { "Validate generated global preferences JSON and try again." } else { $stderr })
+      msg: $"Failed to write ($TEXT_REPLACEMENTS_KEY) into exported global preferences"
+      help: (if ($stderr | is-empty) { "Validate the text replacements plist and try again." } else { $stderr })
     }
   }
 
   let import_result = (^defaults import -g $tmp_global | complete)
-  rm -f $tmp_global $tmp_json
+  rm -f $tmp_global
 
   if ($import_result.exit_code != 0) {
     let stderr = ($import_result.stderr | str trim)
@@ -277,6 +321,7 @@ export def "macos settings sync" [
   --plist-path (-p): string = "" # Backward-compatible alias for --keyboard-shortcuts-plist-path.
   --text-replacements-plist-path: string = "" # Override extracted text replacements key plist path.
   --text-replacements-op-ref: string = $TEXT_REPLACEMENTS_OP_REF # 1Password file ref for extracted text replacements plist.
+  --restore-keyboard-shortcuts # Import the managed keyboard shortcuts plist through macOS defaults.
   --restore-text-replacements # Write the extracted text replacements plist back into macOS global preferences.
   --skip-keyboard-shortcuts # Do not sync com.apple.symbolichotkeys.
   --skip-text-replacements # Do not sync text replacements.
@@ -298,6 +343,11 @@ export def "macos settings sync" [
     text_replacements_key_plist_path
   } else {
     $text_replacements_plist_path
+  }
+
+  if $restore_keyboard_shortcuts {
+    import_keyboard_shortcuts $keyboard_path $dry_run
+    return
   }
 
   if $restore_text_replacements {

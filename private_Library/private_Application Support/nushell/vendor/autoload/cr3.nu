@@ -74,7 +74,7 @@ def "nu-complete cr3 dirs" [context: string] {
       | where type == dir
       | where { |row|
           let name = ($row.name | path basename)
-          (not ($name | str starts-with ".")) and (($name | str downcase) | str starts-with ($prefix | str downcase))
+          (not ($name | str starts-with ".")) and (($name | str lowercase) | str starts-with ($prefix | str lowercase))
         }
       | get name
     )
@@ -137,7 +137,7 @@ def "nu-complete cr3 files" [context: string] {
             | where type == file
             | where { |row|
                 let name = ($row.name | path basename)
-                (($name | str downcase) | str ends-with ".cr3") and (($name | str downcase) | str starts-with ($file_prefix | str downcase))
+                (($name | str lowercase) | str ends-with ".cr3") and (($name | str lowercase) | str starts-with ($file_prefix | str lowercase))
               }
             | get name
             | each { |p| $p | path basename }

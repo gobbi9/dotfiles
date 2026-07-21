@@ -509,6 +509,7 @@ It syncs two settings groups:
    - defaults export com.apple.symbolichotkeys -
    - writes ~/Library/Preferences/com.apple.symbolichotkeys.plist (only if changed)
    - runs: chezmoi add ~/Library/Preferences/com.apple.symbolichotkeys.plist
+   - restores with `defaults import com.apple.symbolichotkeys …` and restarts `SystemUIServer` so the hotkey table reloads
 
 2) Text replacements
    - extracts only NSUserDictionaryReplacementItems from the global preferences domain
@@ -546,14 +547,15 @@ Before the first text replacement upload, create a 1Password item named `macos-t
 
 After changing macOS keyboard shortcuts or text replacements in System Settings, re-run the script and commit. Text replacement sync reapplies its target after uploading to 1Password, so `chezmoi diff` remains clean.
 
-On a new Mac, run `chezmoi apply` to render the 1Password-backed key plist locally, then write only that key into macOS global preferences:
+On a new Mac, run `chezmoi apply` to render the managed plists locally, then import them through macOS defaults. Copying a plist into `~/Library/Preferences` alone does not reliably update the running preferences daemon.
 
 ```nu
 chezmoi apply
+macos settings sync --restore-keyboard-shortcuts
 macos settings sync --restore-text-replacements
 ```
 
-If shortcuts or text replacements do not refresh immediately, log out/in (or reboot).
+Keyboard-shortcut restoration restarts `SystemUIServer` automatically. If text replacements do not refresh immediately, log out/in (or reboot).
 
 ---
 
@@ -655,14 +657,21 @@ chsh -s /opt/homebrew/bin/nu
 # Sign in to 1Password CLI
 /opt/homebrew/bin/op signin --account my.1password.eu
 # Apply chezmoi configuration
-/opt/homebrew/bin/chezmoi apply
+with-env { PATH: ($env.PATH | prepend /opt/homebrew/bin) } { chezmoi apply }
 # Switch the Git remote to SSH
 git remote set-url origin git@github.com:gobbi9/dotfiles.git
+# Restore macOS settings
+# macos settings sync --restore-keyboard-shortcuts # does not work, will be removed
+macos settings sync --restore-text-replacements
+# Enable touchid sudo
+macos touchid sudo
 ```
 
 After `chezmoi apply`, open iTerm2 **Settings → General → Settings**, enable external settings, set its folder to `~/.config`, then select **Save Now**. Log out and back in after changing the login shell. Open Zed once to let `auto_install_extensions` restore extensions.
 
 Note: `git clone https://...` keeps full git history; the later `git remote set-url` step only switches `origin` from HTTPS to SSH.
+
+See section "Restore iTerm2 settings from chezmoi-managed"
 
 ⚠️ `mise trust` must be manually run for repos that have a mise.toml, there is no easy way to track the trusted mise projects.
 

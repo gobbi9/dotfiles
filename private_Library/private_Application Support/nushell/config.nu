@@ -24,7 +24,7 @@ def reload [] {
 
 # Generate an UUID lowercase without newline
 def uuid [] {
-  ^uuidgen | str trim | str downcase
+  ^uuidgen | str trim | str lowercase
 }
 
 # External modules

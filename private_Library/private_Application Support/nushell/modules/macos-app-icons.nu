@@ -30,7 +30,7 @@ def app_icons_icon_entries [] {
   | where name =~ '(?i)\.(png|icns)$'
   | each {|item|
       let parsed = ($item.name | path parse)
-      let ext = ($parsed.extension | default "" | str downcase)
+      let ext = ($parsed.extension | default "" | str lowercase)
       {
         app_name: $parsed.stem
         icon_path: $item.name
@@ -75,7 +75,7 @@ def app_icons_resolve_app [app_name: string] {
 }
 
 def app_icons_prepare_finder_source [icon_path: string] {
-  let ext = ($icon_path | path parse | get extension | default "" | str downcase)
+  let ext = ($icon_path | path parse | get extension | default "" | str lowercase)
   if ($ext == "png") or ($ext == "icns") {
     return { source_icon: $icon_path, cleanup_dir: null, source_format: $ext }
   }

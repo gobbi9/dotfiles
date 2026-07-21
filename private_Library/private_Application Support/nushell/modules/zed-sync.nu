@@ -2,7 +2,7 @@ use shared/tags.nu [tag_info tag_ok tag_warn tag_dry tag_error]
 use shared/sync-utils.nu [ensure_parent_dir ensure_command_available run_chezmoi_add]
 
 def default_settings_path [] {
-  let os_name = ($nu.os-info.name | str downcase)
+  let os_name = ($nu.os-info.name | str lowercase)
   let home = $nu.home-dir
 
   if ($os_name | str contains "windows") {
@@ -14,7 +14,7 @@ def default_settings_path [] {
 }
 
 def extension_dir_candidates [] {
-  let os_name = ($nu.os-info.name | str downcase)
+  let os_name = ($nu.os-info.name | str lowercase)
   let home = $nu.home-dir
 
   if ($os_name | str contains "windows") {
