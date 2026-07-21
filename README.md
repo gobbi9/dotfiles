@@ -653,9 +653,9 @@ brew bundle
 echo /opt/homebrew/bin/nu | sudo tee -a /etc/shells
 chsh -s /opt/homebrew/bin/nu
 # Sign in to 1Password CLI
-op signin
+/opt/homebrew/bin/op signin --account my.1password.eu
 # Apply chezmoi configuration
-chezmoi apply
+/opt/homebrew/bin/chezmoi apply
 # Switch the Git remote to SSH
 git remote set-url origin git@github.com:gobbi9/dotfiles.git
 ```
