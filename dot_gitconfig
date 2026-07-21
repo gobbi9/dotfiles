@@ -17,6 +17,9 @@
 [includeIf "gitdir:~/projects/opensockets/**"]
     path = ~/projects/opensockets/.gitconfig
 
+[includeIf "gitdir:~/projects/dux/**"]
+    path = ~/projects/dux/.gitconfig
+
 # References
 # https://haacked.com/archive/2014/07/28/github-flow-aliases/
 # https://haacked.com/archive/2015/06/29/git-migrate/
