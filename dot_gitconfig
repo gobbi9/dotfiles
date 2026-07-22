@@ -5,6 +5,7 @@
     signingkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDN6d2y9B9N13tFuQLsKZ4PVE2uB8KPCUy0exyAiphMt bitwarden-ssh-key"
 [push]
     default = upstream
+    autoSetupRemote = true
 
 [gpg]
     format = ssh
@@ -17,6 +18,10 @@
 [includeIf "gitdir:~/projects/opensockets/**"]
     path = ~/projects/opensockets/.gitconfig
 
+# DUX - forced to use HTTPS, use MacOS keychain to not
+# have to type username and password (personal access token) everytime
+[credential "https://gitlab.vpn.dux-healthcare.com"]
+    helper = osxkeychain
 [includeIf "gitdir:~/projects/dux/**"]
     path = ~/projects/dux/.gitconfig
 

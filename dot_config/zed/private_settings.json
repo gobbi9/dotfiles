@@ -1,4 +1,14 @@
 {
+  "proxy": "",
+  "agent_servers": {
+    "claude-acp": {
+      "default_config_options": {
+        "mode": "acceptEdits",
+        "model": "sonnet"
+      },
+      "type": "registry"
+    }
+  },
   "show_edit_predictions": true,
   "git": {
     "branch_picker": {

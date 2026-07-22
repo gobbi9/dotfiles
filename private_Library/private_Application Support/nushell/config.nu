@@ -30,6 +30,7 @@ def uuid [] {
 # External modules
 use modules/edit.nu *                # `edit` commands for misc config
 use modules/gh-cli.nu *              # GitHub CLI wrappers
+use modules/git-repo-web.nu *        # Open Git repository remotes in a browser
 use modules/overlays.nu *            # Custom overlay management
 use modules/macos-app-icons.nu *     # App icon override helpers
 use modules/macos-touchid-sudo.nu *  # Enable sudo touchID
