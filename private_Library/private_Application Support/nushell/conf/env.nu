@@ -27,3 +27,6 @@ $env.SSH_AUTH_SOCK =  $"($nu.home-dir)/Library/Group Containers/2BUA8C4S2C.com.1
 
 # mise ignore chezmoi repo
 $env.MISE_IGNORED_CONFIG_PATHS = $"($nu.home-dir)/.local/share/chezmoi"
+
+# Claude code
+$env.ANTHROPIC_MODEL = "claude-sonnet-5"
